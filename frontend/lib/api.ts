@@ -51,7 +51,7 @@ export async function fetchDocument(documentId: string): Promise<DocumentSummary
 
 export async function fetchTaxonomy(): Promise<TaxonomyResponse> {
   ensureApiConfigured();
-  const response = await fetch(`${API_BASE_URL}/taxonomy`, { cache: "no-store" });
+  const response = await fetch(`${API_BASE_URL}/taxonomy`);
   if (!response.ok) {
     const detail = await readError(response);
     throw new Error(detail || `Taxonomy fetch failed with status ${response.status}`);
@@ -61,7 +61,7 @@ export async function fetchTaxonomy(): Promise<TaxonomyResponse> {
 
 export async function fetchTopics(path = "/topics"): Promise<TopicListResponse> {
   ensureApiConfigured();
-  const response = await fetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
+  const response = await fetch(`${API_BASE_URL}${path}`);
   if (!response.ok) {
     const detail = await readError(response);
     throw new Error(detail || `Topic fetch failed with status ${response.status}`);

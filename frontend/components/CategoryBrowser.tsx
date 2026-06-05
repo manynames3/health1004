@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { fetchTopics } from "../lib/api";
-import { TopicSummary } from "../types";
+import { TopicListResponse, TopicSummary } from "../types";
+
+const CATEGORY_CACHE_VERSION = "v1";
+const CATEGORY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function CategoryBrowser({
   endpoint,
@@ -19,10 +22,30 @@ export function CategoryBrowser({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let ignore = false;
+    const cached = readCachedTopics(endpoint);
+    if (cached) {
+      setTopics(cached.topics);
+      setLoading(false);
+    }
+
     fetchTopics(endpoint)
-      .then((payload) => setTopics(payload.topics))
-      .catch((err: Error) => setError(formatError(err)))
-      .finally(() => setLoading(false));
+      .then((payload) => {
+        if (ignore) return;
+        setTopics(payload.topics);
+        setError("");
+        writeCachedTopics(endpoint, payload);
+      })
+      .catch((err: Error) => {
+        if (!ignore && !cached) setError(formatError(err));
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [endpoint]);
 
   const filtered = useMemo(() => {
@@ -78,4 +101,29 @@ function formatError(error: Error): string {
     return "API 서버에 연결할 수 없습니다. 잠시 후 새로고침하거나 배포된 Pages 주소에서 다시 시도하세요.";
   }
   return error.message;
+}
+
+function cacheKey(endpoint: string): string {
+  return `health1004-category:${CATEGORY_CACHE_VERSION}:${endpoint}`;
+}
+
+function readCachedTopics(endpoint: string): TopicListResponse | null {
+  try {
+    const raw = window.localStorage.getItem(cacheKey(endpoint));
+    if (!raw) return null;
+    const cached = JSON.parse(raw) as { savedAt: number; payload: TopicListResponse };
+    if (!cached.savedAt || Date.now() - cached.savedAt > CATEGORY_CACHE_MAX_AGE_MS) return null;
+    if (!cached.payload?.topics?.length) return null;
+    return cached.payload;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTopics(endpoint: string, payload: TopicListResponse): void {
+  try {
+    window.localStorage.setItem(cacheKey(endpoint), JSON.stringify({ savedAt: Date.now(), payload }));
+  } catch {
+    // Browsers can reject localStorage in private mode or when storage is full.
+  }
 }

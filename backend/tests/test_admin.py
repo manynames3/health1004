@@ -1,5 +1,5 @@
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 
 from app import main
 
@@ -40,3 +40,11 @@ def test_require_admin_requires_configured_secret(monkeypatch):
         main.require_admin(x_admin_token="secret-token")
 
     assert exc_info.value.status_code == 503
+
+
+def test_cache_archive_response_sets_public_cache_header():
+    response = Response()
+
+    main.cache_archive_response(response)
+
+    assert response.headers["Cache-Control"] == main.ARCHIVE_CACHE_CONTROL

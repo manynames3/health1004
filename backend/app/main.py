@@ -46,6 +46,8 @@ from app.taxonomy import load_taxonomy, resolve_query
 settings = get_settings()
 configure_logging(settings.log_level)
 
+ARCHIVE_CACHE_CONTROL = "public, max-age=900, stale-while-revalidate=86400"
+
 app = FastAPI(
     title="Korean Natural Health PDF RAG API",
     version="0.1.0",
@@ -113,6 +115,10 @@ def require_admin_review(
         raise HTTPException(status_code=401, detail="Invalid admin password")
 
 
+def cache_archive_response(response: Response) -> None:
+    response.headers["Cache-Control"] = ARCHIVE_CACHE_CONTROL
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(
@@ -125,12 +131,14 @@ def health() -> HealthResponse:
 
 
 @app.get("/taxonomy", response_model=TaxonomyResponse)
-def taxonomy() -> TaxonomyResponse:
+def taxonomy(response: Response) -> TaxonomyResponse:
+    cache_archive_response(response)
     return TaxonomyResponse(**archive.taxonomy_response(settings))
 
 
 @app.get("/topics", response_model=TopicListResponse)
-def topics() -> TopicListResponse:
+def topics(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings))
 
 
@@ -143,27 +151,32 @@ def topic_detail(slug: str) -> TopicDetailResponse:
 
 
 @app.get("/symptoms", response_model=TopicListResponse)
-def symptoms() -> TopicListResponse:
+def symptoms(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings, "symptoms"))
 
 
 @app.get("/foods", response_model=TopicListResponse)
-def foods() -> TopicListResponse:
+def foods(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings, "foods"))
 
 
 @app.get("/conditions", response_model=TopicListResponse)
-def conditions() -> TopicListResponse:
+def conditions(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings, "conditions"))
 
 
 @app.get("/substances", response_model=TopicListResponse)
-def substances() -> TopicListResponse:
+def substances(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings, "substances"))
 
 
 @app.get("/habits", response_model=TopicListResponse)
-def habits() -> TopicListResponse:
+def habits(response: Response) -> TopicListResponse:
+    cache_archive_response(response)
     return TopicListResponse(topics=archive.topic_list(settings, "habits"))
 
 
