@@ -137,8 +137,11 @@ INGEST_ARGS=(
   --pdf-dir "$PDF_DIR"
   --s3-prefix "$S3_PREFIX"
   --report-path "$REPORT_PATH"
-  "${VECTOR_ARGS[@]}"
 )
+
+if [[ "$SMOKE" -eq 1 ]]; then
+  INGEST_ARGS+=("${VECTOR_ARGS[@]}")
+fi
 
 if [[ "$FORCE" -eq 1 ]]; then
   INGEST_ARGS+=(--force)
