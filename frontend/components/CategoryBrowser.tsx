@@ -11,14 +11,16 @@ const CATEGORY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function CategoryBrowser({
   endpoint,
-  emptyText = "표시할 주제가 없습니다."
+  emptyText = "표시할 주제가 없습니다.",
+  initialTopics
 }: {
   endpoint: string;
   emptyText?: string;
+  initialTopics?: TopicListResponse | null;
 }) {
-  const [topics, setTopics] = useState<TopicSummary[]>([]);
+  const [topics, setTopics] = useState<TopicSummary[]>(initialTopics?.topics ?? []);
   const [filter, setFilter] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialTopics);
   const [error, setError] = useState("");
   const [sourceSearch, setSourceSearch] = useState<PassageSearchResponse | null>(null);
   const [sourceLoading, setSourceLoading] = useState(false);
@@ -26,6 +28,16 @@ export function CategoryBrowser({
 
   useEffect(() => {
     let ignore = false;
+    if (initialTopics) {
+      setTopics(initialTopics.topics);
+      setLoading(false);
+      setError("");
+      writeCachedTopics(endpoint, initialTopics);
+      return () => {
+        ignore = true;
+      };
+    }
+
     const cached = readCachedTopics(endpoint);
     if (cached) {
       setTopics(cached.topics);
@@ -49,7 +61,7 @@ export function CategoryBrowser({
     return () => {
       ignore = true;
     };
-  }, [endpoint]);
+  }, [endpoint, initialTopics]);
 
   useEffect(() => {
     const query = filter.trim();

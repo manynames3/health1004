@@ -6,17 +6,26 @@ import { useEffect, useState } from "react";
 import { fetchTopic } from "../lib/api";
 import { TopicDetail } from "../types";
 
-export function TopicDetailClient({ slug }: { slug: string }) {
-  const [topic, setTopic] = useState<TopicDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+export function TopicDetailClient({ slug, initialTopic = null }: { slug: string; initialTopic?: TopicDetail | null }) {
+  const [topic, setTopic] = useState<TopicDetail | null>(initialTopic);
+  const [loading, setLoading] = useState(!initialTopic);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (initialTopic?.slug === slug) {
+      setTopic(initialTopic);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
     fetchTopic(slug)
       .then(setTopic)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, initialTopic]);
 
   if (loading) {
     return (
@@ -64,8 +73,8 @@ export function TopicDetailClient({ slug }: { slug: string }) {
                 </div>
                 <blockquote>{passage.original_korean_text || passage.text}</blockquote>
                 <footer>
-                  <code>{passage.chunk_id}</code>
-                  {passage.source_pdf_s3_key && <span>{passage.source_pdf_s3_key}</span>}
+                  <Link href={`/documents/document/?id=${encodeURIComponent(passage.document_id)}`}>문서 보기</Link>
+                  <span>p.{passage.page_start === passage.page_end ? passage.page_start : `${passage.page_start}-${passage.page_end}`}</span>
                 </footer>
               </article>
             ))}
@@ -91,6 +100,7 @@ export function TopicDetailClient({ slug }: { slug: string }) {
             <article key={doc.document_id}>
               <strong>{doc.title}</strong>
               <span>{doc.filename}</span>
+              <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>문서 보기</Link>
               {doc.pdf_url && (
                 <a href={doc.pdf_url} target="_blank" rel="noreferrer">
                   <ExternalLink size={15} />

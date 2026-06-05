@@ -272,6 +272,7 @@ async def admin_ingest(
                 force=force,
                 pdf_dir_label="admin-upload",
             )
+            archive.clear_archive_cache()
     except HTTPException:
         raise
     except RuntimeError as exc:

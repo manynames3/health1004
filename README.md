@@ -212,6 +212,23 @@ When changing `BEDROCK_EMBED_MODEL_ID`, rebuild embeddings with a full ingestion
 
 Category pages such as `/symptoms/`, `/foods/`, `/conditions/`, `/substances/`, and `/habits/` use the `CategoryBrowser` component. The component caches the topic list in browser local storage for fast repeat visits, then performs live source search for typed terms of at least two characters.
 
+For production, category lists and topic-detail pages also prefer prebuilt static JSON under `frontend/public/static-data/archive/`. This lets new visitors load curated topic cards and the top source passages for pages such as `/topics/onion/` or `/topics/food-additives-topic/` directly from Cloudflare Pages instead of waiting for Lambda to scan the S3 vector bundle.
+
+Rebuild the static archive cache after any ingestion, re-tagging, taxonomy alias changes, or vector-bundle replacement:
+
+```bash
+python scripts/build_static_archive_cache.py --topic-limit 8
+npm --prefix frontend run build
+```
+
+The generated cache includes:
+
+- `frontend/public/static-data/archive/categories/*.json` for topic lists.
+- `frontend/public/static-data/archive/topics/*.json` for per-topic source passages and related documents.
+- `frontend/public/static-data/archive/manifest.json` with generation counts and source bundle keys.
+
+The cache intentionally strips expiring presigned PDF URLs. Topic pages link to document detail pages for stable navigation; live PDF links are generated on demand by the backend where needed.
+
 The live source search calls:
 
 ```text

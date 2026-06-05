@@ -13,6 +13,7 @@ import {
   TopicDetail,
   TopicListResponse
 } from "../types";
+import { fetchStaticTopic, fetchStaticTopics } from "./staticArchiveClient";
 
 const DEPLOYED_API_BASE_URL = "https://aehcnrpvn6k72yujza47cam43a0jervq.lambda-url.us-east-1.on.aws";
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || DEPLOYED_API_BASE_URL).replace(/\/+$/, "");
@@ -79,6 +80,9 @@ export async function fetchTaxonomy(): Promise<TaxonomyResponse> {
 }
 
 export async function fetchTopics(path = "/topics"): Promise<TopicListResponse> {
+  const staticPayload = await fetchStaticTopics(path);
+  if (staticPayload) return staticPayload;
+
   ensureApiConfigured();
   const response = await fetch(`${API_BASE_URL}${path}`);
   if (!response.ok) {
@@ -89,6 +93,9 @@ export async function fetchTopics(path = "/topics"): Promise<TopicListResponse> 
 }
 
 export async function fetchTopic(slug: string): Promise<TopicDetail> {
+  const staticPayload = await fetchStaticTopic(slug);
+  if (staticPayload) return staticPayload;
+
   ensureApiConfigured();
   const response = await fetch(`${API_BASE_URL}/topics/${encodeURIComponent(slug)}`, { cache: "no-store" });
   if (!response.ok) {

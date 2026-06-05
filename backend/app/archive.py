@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from functools import lru_cache
 import re
 from typing import Any
 
@@ -157,16 +158,43 @@ def source_counts_from_vector_bundle(settings: Settings) -> dict[str, int]:
 
 
 def vector_records_from_storage(settings: Settings) -> list[VectorRecord]:
+    return list(
+        _cached_vector_records_from_storage(
+            settings.aws_region,
+            settings.s3_bucket,
+            settings.taxonomy_vector_bundle_key,
+            settings.vector_bundle_key,
+        )
+    )
+
+
+def clear_archive_cache() -> None:
+    _cached_vector_records_from_storage.cache_clear()
+
+
+@lru_cache(maxsize=4)
+def _cached_vector_records_from_storage(
+    aws_region: str,
+    s3_bucket: str,
+    taxonomy_vector_bundle_key: str,
+    vector_bundle_key: str,
+) -> tuple[VectorRecord, ...]:
     try:
+        settings = Settings(
+            AWS_REGION=aws_region,
+            S3_BUCKET=s3_bucket,
+            TAXONOMY_VECTOR_BUNDLE_KEY=taxonomy_vector_bundle_key,
+            VECTOR_BUNDLE_KEY=vector_bundle_key,
+        )
         storage = S3Storage(settings)
-        payload = storage.get_bytes(settings.taxonomy_vector_bundle_key)
+        payload = storage.get_bytes(taxonomy_vector_bundle_key)
         if payload is None:
-            payload = storage.get_bytes(settings.vector_bundle_key)
+            payload = storage.get_bytes(vector_bundle_key)
         if payload is None:
-            return []
-        return parse_vector_bundle(payload).records
+            return ()
+        return tuple(parse_vector_bundle(payload).records)
     except Exception:
-        return []
+        return ()
 
 
 def filters_for_term(category: str, slug: str) -> dict[str, list[str]]:
