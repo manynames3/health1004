@@ -31,6 +31,15 @@ Terraform creates attachable policies rather than broad users or roles:
 
 The default infrastructure is intentionally narrow: S3 access for corpus artifacts and Bedrock model calls. Runtime IAM includes the configured embedding model, primary answer model, fallback answer model, and Bedrock inference profiles. OpenSearch permissions are not created by default because OpenSearch is not provisioned by default.
 
+## Network Boundaries
+
+- Cloudflare Pages serves the static frontend and does not need AWS credentials.
+- The corpus bucket is private and blocks public ACLs and bucket policies.
+- The optional Lambda Function URL is public at the network layer; route-level admin protections live in the FastAPI app.
+- CORS is configured separately for local development, hosted frontend origins, and Lambda Function URL behavior.
+- Postgres is local by default. A hosted Postgres deployment should be private-networked or otherwise restricted by its provider.
+- OpenSearch is not provisioned by this stack. If an external endpoint is used, network access and credentials are the operator's responsibility.
+
 ## S3 Data
 
 The corpus bucket is private. It stores:
@@ -50,6 +59,17 @@ API citations can include signed PDF URLs. Keep signed URL TTL short enough for 
 - `ADMIN_TOKEN` and `ADMIN_PASSWORD` are shared-secret controls, not enterprise authentication.
 
 For broader use, replace shared secrets with an identity provider, role-based access, and audit logs.
+
+## Audit And Blast Radius
+
+Current audit evidence is lightweight:
+
+- FastAPI JSON logs can include request ids and error details.
+- Ingestion reports record file-level outcomes, checksums, page counts, OCR diagnostics, and S3 artifact keys.
+- Taxonomy reports record tagged, untagged, low-confidence, and unmatched terms.
+- Database tables include retrieval logs when the structured DB path is enabled.
+
+Blast radius is limited by keeping the public UI static, the corpus bucket private, ingestion manual, OpenSearch optional, and IAM policies scoped to the corpus bucket plus configured Bedrock models. This is not a complete audit trail; production use should add immutable admin events, retention policies, and secret rotation.
 
 ## API Controls
 

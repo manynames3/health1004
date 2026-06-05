@@ -5,7 +5,7 @@ export function SiteHeader() {
   return (
     <header className="archive-header">
       <Link className="archive-brand" href="/">
-        건강1004 지식서재
+        <img src="/health1004-logo-horizontal.webp" alt="건강1004" />
       </Link>
       <nav aria-label="Primary archive navigation">
         <Link href="/symptoms/">증상/고민</Link>
