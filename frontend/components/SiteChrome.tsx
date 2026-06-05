@@ -15,6 +15,9 @@ export function SiteHeader() {
         <Link href="/conditions/">질환</Link>
         <Link href="/archive/">원문 PDF</Link>
         <Link href="/ask/">AI 질문</Link>
+        <Link className="admin-nav-link" href="/admin/ingest/">
+          관리자
+        </Link>
       </nav>
     </header>
   );

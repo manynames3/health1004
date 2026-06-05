@@ -1,5 +1,16 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, FlaskConical, Leaf, MessageSquareText, Salad, SearchCheck, Stethoscope } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  FlaskConical,
+  Leaf,
+  MessageSquareText,
+  Salad,
+  SearchCheck,
+  ShieldCheck,
+  Stethoscope,
+  UploadCloud
+} from "lucide-react";
 import { CATEGORY_ROUTES } from "../lib/staticTaxonomy";
 import { ResolveSearchPanel } from "./ResolveSearchPanel";
 import { SiteHeader } from "./SiteChrome";
@@ -11,6 +22,11 @@ const homeCards = [
   { href: "/conditions/", title: "질환별 자료 보기", icon: Stethoscope },
   { href: "/archive/", title: "원문 PDF 읽기", icon: BookOpen },
   { href: "/ask/", title: "AI에게 질문하기", icon: MessageSquareText }
+];
+
+const adminCards = [
+  { href: "/admin/ingest/", title: "PDF 업로드", detail: "AWS S3 ingestion", icon: UploadCloud },
+  { href: "/admin/review/", title: "태그 검토", detail: "Low-confidence review", icon: ShieldCheck }
 ];
 
 export function LandingPage() {
@@ -42,6 +58,28 @@ export function LandingPage() {
             </Link>
           );
         })}
+      </section>
+
+      <section className="admin-access-panel" aria-labelledby="admin-access-title">
+        <div>
+          <p className="eyebrow">관리자</p>
+          <h2 id="admin-access-title">아카이브 관리</h2>
+        </div>
+        <div className="admin-access-actions">
+          {adminCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Link href={card.href} key={card.href}>
+                <Icon size={20} aria-hidden="true" />
+                <span>
+                  <strong>{card.title}</strong>
+                  <small>{card.detail}</small>
+                </span>
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       <ResolveSearchPanel />
