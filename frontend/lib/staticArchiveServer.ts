@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { TopicDetail, TopicListResponse } from "../types";
+import { DocumentListResponse, TopicDetail, TopicListResponse } from "../types";
 
 export function readStaticTopicList(endpoint = "/topics"): TopicListResponse | null {
   return readStaticJson<TopicListResponse>(["categories", `${categoryCacheName(endpoint)}.json`]);
@@ -8,6 +8,10 @@ export function readStaticTopicList(endpoint = "/topics"): TopicListResponse | n
 
 export function readStaticTopicDetail(slug: string): TopicDetail | null {
   return readStaticJson<TopicDetail>(["topics", `${slug}.json`]);
+}
+
+export function readStaticDocumentList(): DocumentListResponse | null {
+  return readStaticJson<DocumentListResponse>(["documents", "all.json"]);
 }
 
 function readStaticJson<T>(parts: string[]): T | null {

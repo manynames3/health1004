@@ -13,7 +13,7 @@ import {
   TopicDetail,
   TopicListResponse
 } from "../types";
-import { fetchStaticTopic, fetchStaticTopics } from "./staticArchiveClient";
+import { fetchStaticDocuments, fetchStaticTopic, fetchStaticTopics } from "./staticArchiveClient";
 
 const DEPLOYED_API_BASE_URL = "https://aehcnrpvn6k72yujza47cam43a0jervq.lambda-url.us-east-1.on.aws";
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || DEPLOYED_API_BASE_URL).replace(/\/+$/, "");
@@ -41,6 +41,9 @@ export async function fetchDocuments({
   limit?: number;
   offset?: number;
 } = {}): Promise<DocumentListResponse> {
+  const staticPayload = await fetchStaticDocuments({ query, limit, offset });
+  if (staticPayload) return staticPayload;
+
   ensureApiConfigured();
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (query.trim()) params.set("q", query.trim());

@@ -1,30 +1,41 @@
 "use client";
 
-import { ExternalLink, FileText, Loader2, Search } from "lucide-react";
+import { FileText, Loader2, Search } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { fetchDocuments } from "../lib/api";
-import { DocumentSummary } from "../types";
+import { DocumentListResponse, DocumentSummary } from "../types";
 
 const PAGE_SIZE = 25;
 
-export function DocumentBrowser() {
-  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+export function DocumentBrowser({ initialDocuments = null }: { initialDocuments?: DocumentListResponse | null }) {
+  const [allDocuments, setAllDocuments] = useState<DocumentSummary[]>(initialDocuments?.documents ?? []);
+  const [liveDocuments, setLiveDocuments] = useState<DocumentSummary[]>([]);
   const [filter, setFilter] = useState("");
   const [submittedFilter, setSubmittedFilter] = useState("");
-  const [total, setTotal] = useState(0);
+  const [liveTotal, setLiveTotal] = useState(0);
   const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const usingStaticDocuments = Boolean(initialDocuments?.documents?.length);
+  const [loading, setLoading] = useState(!usingStaticDocuments);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let ignore = false;
+    if (usingStaticDocuments) {
+      setAllDocuments(initialDocuments?.documents ?? []);
+      setLoading(false);
+      setError("");
+      return () => {
+        ignore = true;
+      };
+    }
+
     setLoading(true);
     fetchDocuments({ query: submittedFilter, limit: PAGE_SIZE, offset })
       .then((payload) => {
         if (ignore) return;
-        setDocuments(payload.documents);
-        setTotal(payload.total);
+        setLiveDocuments(payload.documents);
+        setLiveTotal(payload.total);
         setError("");
       })
       .catch((err: Error) => setError(formatConnectionError(err)))
@@ -34,7 +45,7 @@ export function DocumentBrowser() {
     return () => {
       ignore = true;
     };
-  }, [submittedFilter, offset]);
+  }, [submittedFilter, offset, initialDocuments, usingStaticDocuments]);
 
   function submitSearch(event: FormEvent) {
     event.preventDefault();
@@ -43,6 +54,14 @@ export function DocumentBrowser() {
     setSubmittedFilter(filter.trim());
   }
 
+  const filteredStaticDocuments = useMemo(() => {
+    if (!usingStaticDocuments) return [];
+    const needle = submittedFilter.trim().toLowerCase();
+    if (!needle) return allDocuments;
+    return allDocuments.filter((doc) => documentMatches(doc, needle));
+  }, [allDocuments, submittedFilter, usingStaticDocuments]);
+  const documents = usingStaticDocuments ? filteredStaticDocuments.slice(offset, offset + PAGE_SIZE) : liveDocuments;
+  const total = usingStaticDocuments ? filteredStaticDocuments.length : liveTotal;
   const currentStart = total === 0 ? 0 : offset + 1;
   const currentEnd = Math.min(offset + documents.length, total);
   const hasPrevious = offset > 0;
@@ -64,7 +83,7 @@ export function DocumentBrowser() {
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="제목, 파일명 검색"
+            placeholder="제목 검색"
           />
         </label>
         <button type="submit">검색</button>
@@ -98,17 +117,7 @@ export function DocumentBrowser() {
               <h3>
                 <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>{doc.title}</Link>
               </h3>
-              <p>
-                {doc.lesson_number ? `#${doc.lesson_number} · ` : ""}
-                {doc.page_count}쪽 · 원문 발췌 {doc.chunk_count}개
-              </p>
-              <span>{doc.filename}</span>
             </div>
-            {doc.pdf_url && (
-              <a className="icon-link" href={doc.pdf_url} target="_blank" rel="noreferrer" aria-label="PDF 열기">
-                <ExternalLink size={18} />
-              </a>
-            )}
           </article>
         ))}
       </div>
@@ -128,6 +137,14 @@ export function DocumentBrowser() {
       )}
     </section>
   );
+}
+
+function documentMatches(document: DocumentSummary, needle: string): boolean {
+  return [document.title, document.filename, document.detected_date, document.series, document.volume, document.lesson_number]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(needle);
 }
 
 function formatConnectionError(error: Error): string {

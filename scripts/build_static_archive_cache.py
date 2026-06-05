@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 from app import archive  # noqa: E402
 from app.config import get_settings  # noqa: E402
+from app.extraction import detect_health1004_episode_number  # noqa: E402
+from app.s3_store import S3Storage  # noqa: E402
 
 
 CATEGORIES: dict[str, str | None] = {
@@ -46,8 +48,10 @@ def main() -> None:
         shutil.rmtree(output_dir)
     categories_dir = output_dir / "categories"
     topics_dir = output_dir / "topics"
+    documents_dir = output_dir / "documents"
     categories_dir.mkdir(parents=True, exist_ok=True)
     topics_dir.mkdir(parents=True, exist_ok=True)
+    documents_dir.mkdir(parents=True, exist_ok=True)
 
     generated_at = datetime.now(timezone.utc).isoformat()
     category_counts: dict[str, int] = {}
@@ -69,11 +73,23 @@ def main() -> None:
         except Exception as exc:  # pragma: no cover - surfaced in CLI report
             failures[slug] = str(exc)
 
+    documents = static_documents(settings)
+    write_json(
+        documents_dir / "all.json",
+        {
+            "documents": documents,
+            "total": len(documents),
+            "limit": len(documents),
+            "offset": 0,
+        },
+    )
+
     manifest = {
         "generated_at": generated_at,
         "topic_limit": args.topic_limit,
         "category_counts": category_counts,
         "topic_count": len(unique_topic_slugs),
+        "document_count": len(documents),
         "failed_topics": failures,
         "taxonomy_seed_path": settings.taxonomy_seed_path,
         "vector_bundle_key": settings.vector_bundle_key,
@@ -86,6 +102,7 @@ def main() -> None:
             {
                 "output_dir": str(output_dir),
                 "topic_count": len(unique_topic_slugs),
+                "document_count": len(documents),
                 "category_counts": category_counts,
                 "failed_topics": failures,
             },
@@ -177,6 +194,46 @@ def compact_document(document: dict[str, Any]) -> dict[str, Any]:
         "pdf_url": None,
         "checksum": document.get("checksum"),
     }
+
+
+def static_documents(settings: Any) -> list[dict[str, Any]]:
+    storage = S3Storage(settings)
+    manifest = storage.documents_manifest()
+    documents = [compact_document(document_list_payload(document)) for document in manifest.get("documents", {}).values()]
+    documents.sort(key=document_sort_key)
+    return documents
+
+
+def document_list_payload(document: dict[str, Any]) -> dict[str, Any]:
+    title = document.get("title") or document.get("filename") or "Untitled document"
+    filename = document.get("filename") or ""
+    episode_number = detect_health1004_episode_number(document.get("lesson_number"), filename, title)
+    return {
+        "document_id": document.get("document_id"),
+        "title": title,
+        "filename": filename,
+        "detected_date": document.get("detected_date"),
+        "language": document.get("language") or "unknown",
+        "page_count": document.get("page_count") or 0,
+        "chunk_count": document.get("chunk_count") or 0,
+        "extraction_method": document.get("extraction_method"),
+        "series": document.get("series"),
+        "volume": document.get("volume"),
+        "lesson_number": str(episode_number) if episode_number is not None else document.get("lesson_number"),
+        "pdf_s3_key": document.get("pdf_s3_key"),
+        "checksum": document.get("checksum"),
+    }
+
+
+def document_sort_key(document: dict[str, Any]) -> tuple[int, int, str]:
+    episode_number = detect_health1004_episode_number(
+        document.get("lesson_number"),
+        document.get("filename"),
+        document.get("title"),
+    )
+    if episode_number is not None:
+        return (0, episode_number, document.get("title") or "")
+    return (1, 0, document.get("title") or document.get("filename") or "")
 
 
 def write_json(path: Path, payload: Any) -> None:
