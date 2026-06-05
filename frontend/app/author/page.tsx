@@ -40,7 +40,6 @@ export default function AuthorPage() {
         <aside className="author-side-column" aria-label="정현수 저자 프로필">
           <figure className="author-photo-card">
             <img src="/author-hs.jpg" alt="자연 속에서 미소 짓는 정현수 저자" />
-            <figcaption>정현수 · 건강천사</figcaption>
           </figure>
 
           <dl className="author-profile-list">
