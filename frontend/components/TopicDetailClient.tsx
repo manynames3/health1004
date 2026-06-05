@@ -50,9 +50,9 @@ export function TopicDetailClient({ slug }: { slug: string }) {
         </div>
 
         <section>
-          <h2>주요 원문 조각</h2>
+          <h2>주요 원문 발췌</h2>
           <div className="passage-list">
-            {topic.source_passages.length === 0 && <div className="empty-state">아직 태그된 원문 조각이 없습니다.</div>}
+            {topic.source_passages.length === 0 && <div className="empty-state">아직 연결된 원문 발췌가 없습니다.</div>}
             {topic.source_passages.map((passage) => (
               <article className="passage-card" key={passage.chunk_id}>
                 <div>
@@ -80,7 +80,7 @@ export function TopicDetailClient({ slug }: { slug: string }) {
           {topic.related_topics.map((related) => (
             <Link href={`/topics/${related.slug}/`} key={related.slug}>
               {related.title}
-              <small>원문 조각 {related.source_count}개</small>
+              <small>관련 원문 {related.source_count}건</small>
             </Link>
           ))}
         </section>

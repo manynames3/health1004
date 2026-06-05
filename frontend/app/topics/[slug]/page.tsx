@@ -12,7 +12,7 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
     <PageShell
       eyebrow="주제 상세"
       title="관련 원문 찾아보기"
-      subtitle="주제별 별칭, 원문 조각, PDF 출처, 관련 문서를 함께 확인합니다."
+      subtitle="주제별 별칭, 원문 발췌, PDF 출처, 관련 문서를 함께 확인합니다."
     >
       <TopicDetailClient slug={slug} />
     </PageShell>

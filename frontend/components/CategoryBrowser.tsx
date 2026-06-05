@@ -131,7 +131,7 @@ export function CategoryBrowser({
             <h2>{topic.title}</h2>
             {topic.english_title && <p>{topic.english_title}</p>}
             <small>{topic.aliases.slice(0, 5).join(", ")}</small>
-            <strong>원문 조각 {topic.source_count.toLocaleString()}개</strong>
+            <strong>관련 원문 {topic.source_count.toLocaleString()}건</strong>
           </Link>
         ))}
       </div>
@@ -141,7 +141,7 @@ export function CategoryBrowser({
           <div className="source-search-heading">
             <div>
               <p className="eyebrow">원문 결과</p>
-              <h2>PDF 안에서 찾은 관련 조각</h2>
+              <h2>PDF 안에서 찾은 관련 원문</h2>
             </div>
             <Link href={`/admin/?alias=${encodeURIComponent(trimmedFilter)}&category=${encodeURIComponent(endpointCategory(endpoint) || "topics")}`}>
               새 별칭으로 제안
@@ -151,7 +151,7 @@ export function CategoryBrowser({
           {sourceLoading && (
             <div className="empty-state">
               <Loader2 className="spin" size={18} aria-hidden="true" />
-              원문 조각을 검색하는 중입니다.
+              관련 원문을 찾는 중입니다.
             </div>
           )}
           {sourceError && <div className="error-box">{sourceError}</div>}
@@ -159,7 +159,7 @@ export function CategoryBrowser({
             <>
               <div className="source-search-summary">
                 <span>
-                  원문 조각 {sourceSearch.total.toLocaleString()}개
+                  관련 원문 {sourceSearch.total.toLocaleString()}건
                   {sourceSearch.fallback_used ? " · 전체 원문까지 확장 검색" : ""}
                 </span>
                 {sourceSearch.matched_topics.length > 0 && (
@@ -171,7 +171,7 @@ export function CategoryBrowser({
               </div>
 
               {sourceSearch.passages.length === 0 ? (
-                <div className="empty-state">원문에서도 일치하는 조각을 찾지 못했습니다.</div>
+                <div className="empty-state">원문에서도 일치하는 내용을 찾지 못했습니다.</div>
               ) : (
                 <div className="source-result-list">
                   {sourceSearch.passages.map((passage) => (

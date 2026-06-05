@@ -66,7 +66,7 @@ export function QueryWorkspace() {
 
         <div className="query-actions">
           <label>
-            검색 조각
+            참고할 원문
             <select value={topK} onChange={(event) => setTopK(Number(event.target.value))}>
               {[4, 6, 8, 10, 12, 16].map((value) => (
                 <option value={value} key={value}>
@@ -112,7 +112,7 @@ export function QueryWorkspace() {
         {!response && !loading && (
           <div className="empty-answer">
             <BookOpen size={24} aria-hidden="true" />
-            질문을 입력하면 답변, 인용, 검색된 원문 조각이 여기에 표시됩니다.
+            질문을 입력하면 답변, 인용, 검색된 원문 근거가 여기에 표시됩니다.
           </div>
         )}
 
@@ -200,7 +200,7 @@ function RetrievedSources({ chunks }: { chunks: RetrievedChunk[] }) {
 
   return (
     <section className="source-section" aria-labelledby="sources-title">
-      <h3 id="sources-title">검색된 원문 조각</h3>
+      <h3 id="sources-title">검색된 원문 근거</h3>
       <div className="source-list">
         {sorted.map((chunk) => (
           <details key={chunk.chunk_id} className="source-detail">

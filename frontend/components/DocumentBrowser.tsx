@@ -100,7 +100,7 @@ export function DocumentBrowser() {
               </h3>
               <p>
                 {doc.lesson_number ? `#${doc.lesson_number} · ` : ""}
-                {doc.page_count}쪽 · 원문 조각 {doc.chunk_count}개
+                {doc.page_count}쪽 · 원문 발췌 {doc.chunk_count}개
               </p>
               <span>{doc.filename}</span>
             </div>

@@ -44,9 +44,9 @@ export function DocumentDetailClient({ documentId }: { documentId: string }) {
           <dd>{document.filename}</dd>
         </div>
         <div>
-          <dt>페이지 / 조각</dt>
+          <dt>페이지 / 발췌</dt>
           <dd>
-            {document.page_count}쪽 · 원문 조각 {document.chunk_count}개
+            {document.page_count}쪽 · 원문 발췌 {document.chunk_count}개
           </dd>
         </div>
         <div>

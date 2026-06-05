@@ -93,7 +93,7 @@ export function AdminIngestPanel() {
         <p className="eyebrow">처리 흐름</p>
         <h2 id="admin-title">PDF를 AWS에 업로드</h2>
         <p>
-          한국어 PDF를 S3에 저장하고, 원문 조각과 문서 목록을 같은 처리 흐름으로 갱신합니다.
+          한국어 PDF를 S3에 저장하고, 원문 발췌와 문서 목록을 같은 처리 흐름으로 갱신합니다.
           브라우저 업로드는 소량 파일용이며, 대량 파일은 CLI/S3 업로드를 권장합니다.
         </p>
       </div>
@@ -199,7 +199,7 @@ export function AdminIngestPanel() {
               <StatusItem label="파일" value={`${result.total_pdfs}`} />
               <StatusItem label="건너뜀" value={`${result.skipped_pdfs}`} />
               <StatusItem label="쪽수" value={`${result.pages_processed}`} />
-              <StatusItem label="원문 조각" value={`${result.chunks_created}`} />
+              <StatusItem label="원문 발췌" value={`${result.chunks_created}`} />
             </div>
             <div className="result-files">
               {result.files.map((file) => (
@@ -208,7 +208,7 @@ export function AdminIngestPanel() {
                   <span>{file.status}</span>
                   <small>
                     {file.error ||
-                      `${file.page_count ?? 0}쪽 · 원문 조각 ${file.chunk_count ?? 0}개 · ${
+                      `${file.page_count ?? 0}쪽 · 원문 발췌 ${file.chunk_count ?? 0}개 · ${
                         file.extraction_method || "extraction"
                       }`}
                   </small>
