@@ -44,10 +44,6 @@ export function DocumentDetailClient({ documentId }: { documentId: string }) {
           <dd>{document.filename}</dd>
         </div>
         <div>
-          <dt>날짜</dt>
-          <dd>{document.detected_date || "날짜 미상"}</dd>
-        </div>
-        <div>
           <dt>페이지 / 조각</dt>
           <dd>
             {document.page_count}쪽 · 원문 조각 {document.chunk_count}개

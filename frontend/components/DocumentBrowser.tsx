@@ -64,7 +64,7 @@ export function DocumentBrowser() {
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="연도, 날짜, 제목, 파일명 검색"
+            placeholder="제목, 파일명 검색"
           />
         </label>
         <button type="submit">검색</button>
@@ -99,7 +99,7 @@ export function DocumentBrowser() {
                 <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>{doc.title}</Link>
               </h3>
               <p>
-                {doc.detected_date || "날짜 미상"} · {doc.page_count}쪽 · 원문 조각 {doc.chunk_count}개
+                {doc.page_count}쪽 · 원문 조각 {doc.chunk_count}개
               </p>
               <span>{doc.filename}</span>
             </div>
