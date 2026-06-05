@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Loader2, MessageSquareText } from "lucide-react";
+import { Loader2, MessageSquareText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchTopic } from "../lib/api";
 import { TopicDetail } from "../types";
@@ -99,14 +99,7 @@ export function TopicDetailClient({ slug, initialTopic = null }: { slug: string;
           {topic.related_documents.map((doc) => (
             <article key={doc.document_id}>
               <strong>{doc.title}</strong>
-              <span>{doc.filename}</span>
               <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>문서 보기</Link>
-              {doc.pdf_url && (
-                <a href={doc.pdf_url} target="_blank" rel="noreferrer">
-                  <ExternalLink size={15} />
-                  PDF
-                </a>
-              )}
             </article>
           ))}
         </section>
