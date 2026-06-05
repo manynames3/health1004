@@ -24,6 +24,23 @@ Primary user paths:
 
 The app is educational and archival. It is not medical diagnosis, treatment, dosage, or medication advice.
 
+## Current Product Behavior
+
+The browse pages are taxonomy-first. Users can start from curated Korean topic cards for symptoms, foods, conditions, substances, habits, and original PDFs. Search boxes on those category pages do two things:
+
+1. Filter the curated topic cards by Korean title, English title, and aliases.
+2. Search the existing indexed PDF passage text when the typed term is not already represented by a curated card.
+
+For example, `/substances/` may show only a short controlled list of additive topics at first, but a query such as `아스파탐`, `유화제`, or `카라멜색소` also returns matching source passages from the archive. This keeps the user from being trapped inside the current taxonomy while still making taxonomy the primary navigation layer.
+
+The source-result lane shows:
+
+- matching original passage snippets
+- PDF filename and page range
+- document detail links
+- an "ask from sources" path into the assistant
+- an admin alias-suggestion link for repeated missing terms
+
 ## What Reviewers Should Notice
 
 | Area | Evidence in this repo |
@@ -31,9 +48,9 @@ The app is educational and archival. It is not medical diagnosis, treatment, dos
 | Cloud architecture | Terraform for low-cost S3/IAM, optional Lambda Function URL backend, Cloudflare Pages static frontend, Bedrock integration, optional OpenSearch mapping |
 | Cost discipline | No always-on OpenSearch, App Runner, ECR, CloudFront, or scheduled ingestion in the default Terraform |
 | Data pipeline | Manual PDF ingestion, page-aware extraction, Korean OCR fallback, checksums, S3 artifacts, ingestion reports |
-| Retrieval design | Taxonomy resolution before hybrid search, vector bundle fallback, OpenSearch Nori support when available |
+| Retrieval design | Taxonomy resolution before hybrid search, category-page source search, vector bundle fallback, OpenSearch Nori support when available |
 | Source traceability | PDF filename, title, page ranges, section heading, Korean quote, S3 keys, and signed PDF links in citations |
-| Operational maturity | Runbook, teardown guide, cost model, security notes, observability notes, ADRs, and CI workflow |
+| Operational maturity | Runbook, teardown guide, cost model, security notes, observability notes, ADRs, admin review paths, and CI workflow |
 | Testability | Backend pytest suite, static frontend build, Terraform format/validate workflow, Korean taxonomy evaluation script |
 
 ## Architecture
@@ -50,7 +67,8 @@ At a high level:
 6. SQLAlchemy/Alembic adds structured taxonomy and review tables for local or hosted Postgres.
 7. Optional OpenSearch reindexing supports metadata filters and Korean Nori analysis when an endpoint exists.
 8. FastAPI resolves Korean queries into canonical topics and aliases before retrieval.
-9. Next.js renders taxonomy-first browsing and an assistant UI.
+9. FastAPI can also search existing passage text directly for category-page source results.
+10. Next.js renders taxonomy-first browsing, source-result search, admin review, and an assistant UI.
 
 ## Tech Stack
 
@@ -154,6 +172,8 @@ Build or update the controlled taxonomy:
 python scripts/build_taxonomy.py --seed data/taxonomy.seed.yaml
 ```
 
+Add new Korean terms and aliases directly in `data/taxonomy.seed.yaml`. Prefer canonical health/archive language for the topic title, then add common spellings, spacing variants, OCR variants, and English names in `aliases`. Deterministic alias matching runs before any optional LLM helper, so this file is the main search-quality lever.
+
 Tag or re-tag existing chunks without rerunning OCR:
 
 ```bash
@@ -179,6 +199,34 @@ The evaluation prints resolved topics, filters, top retrieved passages, document
 
 When changing `BEDROCK_EMBED_MODEL_ID`, rebuild embeddings with a full ingestion run so stored passage vectors and query vectors use the same model. The backend reads the active vector bundle metadata and embeds queries with that recorded model to avoid silently mixing embedding spaces during migrations.
 
+## Category Search And Alias Review
+
+Category pages such as `/symptoms/`, `/foods/`, `/conditions/`, `/substances/`, and `/habits/` use the `CategoryBrowser` component. The component caches the topic list in browser local storage for fast repeat visits, then performs live source search for typed terms of at least two characters.
+
+The live source search calls:
+
+```text
+GET /search/passages?q=<term>&category=<symptoms|foods|conditions|substances|habits>&limit=6
+```
+
+The backend search flow is intentionally low-cost:
+
+1. Normalize Korean spacing, punctuation, Hangul variants, English capitalization, and common OCR noise.
+2. Resolve the query against canonical topics and aliases.
+3. Search matching tagged passages first when a category filter exists.
+4. Fall back to broader indexed passage text if the taxonomy filter is too narrow.
+5. Return source passages with filename, page range, chunk id, matched topics, expanded aliases, and whether fallback was used.
+
+This endpoint does not call Bedrock. It searches the existing S3 vector bundle metadata and passage text, so category-page source search is cheap and fast compared with answer generation.
+
+Repeated missing terms can be proposed from the UI:
+
+```text
+POST /admin/alias-suggestion
+```
+
+The request requires `ADMIN_PASSWORD` and stores a pending suggestion at `admin/alias_suggestions.json` in S3. Review those suggestions manually, then add accepted aliases or new canonical topics to `data/taxonomy.seed.yaml` and run the normal build/tag/reindex commands above.
+
 ## API Surface
 
 Archive and taxonomy:
@@ -194,6 +242,7 @@ Archive and taxonomy:
 - `GET /documents`
 - `GET /documents/{document_id}`
 - `GET /passages?topic=...`
+- `GET /search/passages?q=...&category=...`
 
 Query and assistant:
 
@@ -206,6 +255,7 @@ Admin:
 - `POST /admin/ingest`
 - `GET /admin/low-confidence-passages`
 - `POST /admin/review-tag`
+- `POST /admin/alias-suggestion`
 
 Admin upload endpoints require `ADMIN_TOKEN`. Review endpoints use `ADMIN_PASSWORD`, with local-only fallback for development.
 
@@ -291,11 +341,12 @@ outputs/          Local generated reports and mapping plans, ignored except .git
 - Retrieval quality still needs human evaluation against the real corpus before public medical-adjacent use.
 - Admin authentication is intentionally minimal for a low-volume internal workflow.
 - Retrieval logs can contain user questions if persisted; review retention and privacy policy before production use.
+- Newly added taxonomy aliases do not change stored source counts until re-tag/re-index commands are run.
 
 ## Next Production Hardening
 
 - Add hosted API runtime choice and deployment automation.
 - Add structured metrics and alerts for query errors, Bedrock failures, ingestion failures, and citation gaps.
 - Add object lifecycle policies if source artifacts grow.
-- Add a human review workflow for low-confidence taxonomy assignments.
+- Expand the human review workflow for low-confidence taxonomy assignments and alias suggestions.
 - Add auth if the archive should remain private.
