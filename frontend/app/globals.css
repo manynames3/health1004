@@ -1159,12 +1159,21 @@ code {
 
 .taxonomy-hero {
   display: grid;
-  align-items: end;
-  min-height: 54svh;
-  padding: 70px 0 48px;
+  align-items: center;
+  padding: 52px 0 26px;
 }
 
-.taxonomy-hero h1,
+.taxonomy-hero .hero-kicker {
+  color: var(--accent-dark);
+}
+
+.taxonomy-hero h1 {
+  max-width: 840px;
+  margin-bottom: 14px;
+  font-size: clamp(2.35rem, 4.8vw, 4.35rem);
+  font-weight: 950;
+}
+
 .archive-page-hero h1 {
   margin-bottom: 16px;
   font-size: clamp(2.6rem, 7vw, 5.7rem);
