@@ -1,25 +1,22 @@
-import { PageShell } from "../../components/SiteChrome";
+import { ArchiveDisclaimer, SiteHeader } from "../../components/SiteChrome";
 
 export default function AuthorPage() {
   return (
-    <PageShell
-      eyebrow="기록을 남긴 사람"
-      title="About 건강1004"
-      subtitle="15년 동안의 정성으로 만들어 지인들에게 나눈 이메일들을 모아 만든 지식서재입니다."
-    >
-      <section className="author-archive-note">
-        <p className="eyebrow">15년의 기록</p>
-        <h2>원문과 마음을 함께 보존하는 건강 아카이브</h2>
-        <p>
-          건강1004는 오랜 시간 꾸준히 나눈 건강 글과 원문 자료를 한곳에 모아, 증상과 음식, 질환,
-          첨가물, 생활습관이라는 길을 따라 다시 읽을 수 있게 정리한 지식서재입니다. 빠른 답보다
-          출처와 맥락을 먼저 보여주는 것을 목표로 합니다.
-        </p>
-      </section>
-
-      <section className="author-page-layout">
+    <main className="archive-shell">
+      <SiteHeader />
+      <section className="author-page-layout author-unified-section">
         <article className="author-bio-copy">
-          <p className="eyebrow">Bio</p>
+          <p className="eyebrow">15년의 기록</p>
+          <h1>About 건강1004</h1>
+          <p className="author-lede">
+            15년 동안의 정성으로 만들어 지인들에게 나눈 이메일들을 모아 만든 지식서재입니다.
+          </p>
+          <p>
+            건강1004는 오랜 시간 꾸준히 나눈 건강 글과 원문 자료를 한곳에 모아, 증상과 음식, 질환,
+            첨가물, 생활습관이라는 길을 따라 다시 읽을 수 있게 정리한 지식서재입니다. 빠른 답보다
+            출처와 맥락을 먼저 보여주는 것을 목표로 합니다.
+          </p>
+
           <h2>정현수</h2>
           <p className="author-role">건강천사</p>
           <p>안녕하세요, 저는 평생 보이지 않는 신호를 붙잡으려 애써온 사람입니다.</p>
@@ -74,6 +71,7 @@ export default function AuthorPage() {
           </dl>
         </aside>
       </section>
-    </PageShell>
+      <ArchiveDisclaimer />
+    </main>
   );
 }
