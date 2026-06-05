@@ -1240,13 +1240,13 @@ code {
 .taxonomy-hero h1 {
   max-width: 840px;
   margin-bottom: 14px;
-  font-size: clamp(2.35rem, 4.8vw, 3.5rem);
+  font-size: clamp(2.35rem, 4.8vw, 3rem);
   font-weight: 950;
 }
 
 .archive-page-hero h1 {
   margin-bottom: 16px;
-  font-size: clamp(2.6rem, 7vw, 3.5rem);
+  font-size: clamp(2.6rem, 7vw, 3rem);
   font-weight: 950;
 }
 
@@ -1375,7 +1375,7 @@ code {
 .author-bio-copy h1 {
   max-width: 820px;
   margin-bottom: 14px;
-  font-size: clamp(2.5rem, 5.8vw, 3.5rem);
+  font-size: clamp(2.5rem, 5.8vw, 3rem);
   font-weight: 950;
   line-height: 0.98;
 }
