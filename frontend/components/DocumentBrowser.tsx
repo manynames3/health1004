@@ -96,7 +96,7 @@ export function DocumentBrowser() {
             <FileText size={19} aria-hidden="true" />
             <div className="document-main">
               <h3>
-                <Link href={`/documents/${doc.document_id}/`}>{doc.title}</Link>
+                <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>{doc.title}</Link>
               </h3>
               <p>
                 {doc.detected_date || "날짜 미상"} · {doc.page_count}쪽 · 원문 조각 {doc.chunk_count}개

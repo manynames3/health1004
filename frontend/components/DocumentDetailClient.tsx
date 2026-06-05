@@ -11,7 +11,14 @@ export function DocumentDetailClient({ documentId }: { documentId: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchDocument(documentId)
+    const resolvedDocumentId =
+      documentId === "document" ? new URLSearchParams(window.location.search).get("id") || "" : documentId;
+    if (!resolvedDocumentId) {
+      setError("문서 ID가 없습니다.");
+      setLoading(false);
+      return;
+    }
+    fetchDocument(resolvedDocumentId)
       .then(setDocument)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
