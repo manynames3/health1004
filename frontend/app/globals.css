@@ -1145,7 +1145,17 @@ code {
 .archive-brand {
   display: inline-flex;
   align-items: center;
+  min-height: 56px;
   font-weight: 950;
+}
+
+.archive-brand img {
+  display: block;
+  width: 184px;
+  height: 56px;
+  max-width: min(230px, 62vw);
+  object-fit: cover;
+  object-position: center;
 }
 
 .site-footer {

@@ -1,16 +1,16 @@
 # Health1004 Korean Archive
 
-Production-style AWS/cloud platform engineering sample for a taxonomy-first Korean natural-health PDF archive.
+Live Korean natural-health archive for finding source-grounded newsletter passages by symptom, food, condition, additive, lifestyle, and original PDF.
 
-Health1004 turns a one-time corpus of Korean weekly PDF newsletters into a browsable, source-traceable knowledge archive organized by symptoms, foods, conditions, substances, habits, and original documents. RAG is preserved as an assistant layer, but the main product is structured archive navigation with Korean-aware aliases, citations, and manual review paths.
+Health1004 turns a manually ingested corpus of Korean weekly PDF newsletters into a browsable, source-traceable knowledge archive. Readers can move from everyday Korean search terms to curated topics, original source passages, page-level PDF citations, and an assistant that answers only from retrieved archive context. The frontend runs on Cloudflare Pages; the FastAPI backend runs locally or as an optional AWS Lambda Function URL backed by private S3 and Amazon Bedrock.
 
 Live static frontend: [health1004.pages.dev](https://health1004.pages.dev)
 
-The live Pages deployment is the static frontend. The FastAPI backend, Bedrock calls, private S3 corpus, and optional database/index services require environment configuration and are designed to run locally or on a low-cost on-demand runtime.
+The live Pages deployment serves the public static archive. API-backed query, admin, Bedrock, private S3 corpus, and optional database/index features use the configured FastAPI backend.
 
-## Why This Exists
+## Problem
 
-Korean semantic retrieval can be brittle for domain-specific OCR text. This project uses a controlled taxonomy first, then layers retrieval and generation over tagged, citation-backed passages. The result is closer to a respectful digital archive than a generic chatbot demo.
+Korean semantic retrieval can be brittle for domain-specific OCR text. Health1004 uses a controlled taxonomy first, then layers retrieval and generation over tagged, citation-backed passages. The result is a structured archive experience instead of a generic chatbot.
 
 Primary user paths:
 
@@ -23,6 +23,14 @@ Primary user paths:
 - AI에게 질문하기
 
 The app is educational and archival. It is not medical diagnosis, treatment, dosage, or medication advice.
+
+## Solution
+
+The system converts PDFs into page-aware passages, tags them against a curated Korean taxonomy, stores corpus artifacts in private S3, and serves both static browsing data and API-backed query paths. Users can browse by controlled categories first, then search or ask questions against source passages when needed.
+
+## Operational Value
+
+Health1004 is built to be operated: Terraform, CI checks, IAM boundaries, private storage, model configuration, ingestion reports, logs, rollback and teardown docs, cost controls, and explicit limits are part of the product.
 
 ## Current Product Behavior
 
@@ -41,19 +49,42 @@ The source-result lane shows:
 - an "ask from sources" path into the assistant
 - an admin alias-suggestion link for repeated missing terms
 
-## What Reviewers Should Notice
+## Tech Stack
+
+- Frontend: Next.js static export, React, TypeScript, Cloudflare Pages
+- Backend: FastAPI, Pydantic, SQLAlchemy, Alembic
+- AWS: S3, IAM, Bedrock Runtime, optional Lambda Function URL
+- Retrieval: deterministic Korean alias matching, hybrid keyword/vector retrieval, S3 vector bundle
+- Ingestion: PyMuPDF, optional PaddleOCR, optional Tesseract Korean OCR
+- Infrastructure: Terraform for private S3 bucket, IAM policies, optional Lambda API
+- Local development: Docker Compose Postgres
+- CI: GitHub Actions for backend tests, frontend build, Terraform format/validate
+
+## Engineering Highlights
+
+- Taxonomy-first browsing before RAG to reduce brittle Korean semantic search behavior.
+- Page-aware chunking and citation formatting so answers and source results trace back to PDF pages.
+- Low-idle architecture: static frontend, private S3 corpus, manual ingestion, optional Lambda API, no default OpenSearch domain.
+- Bedrock model lifecycle rules that separate answer-model changes from embedding-vector rebuilds.
+- Admin ingestion and review flows protected by shared secrets for low-volume internal use.
+- JSON logs, request ids, ingestion reports, taxonomy reports, and retrieval evaluation scripts.
+- Documentation for deployment, security, observability, cost, testing, tradeoffs, runbooks, and teardown.
+
+## Evidence Matrix
 
 | Area | Evidence in this repo |
 | --- | --- |
-| Cloud architecture | Terraform for low-cost S3/IAM, optional Lambda Function URL backend, Cloudflare Pages static frontend, Bedrock integration, optional OpenSearch mapping |
-| Cost discipline | No always-on OpenSearch, App Runner, ECR, CloudFront, or scheduled ingestion in the default Terraform |
-| Data pipeline | Manual PDF ingestion, page-aware extraction, Korean OCR fallback, checksums, S3 artifacts, ingestion reports |
-| Retrieval design | Taxonomy resolution before hybrid search, category-page source search, vector bundle fallback, OpenSearch Nori support when available |
-| Source traceability | PDF filename, title, page ranges, section heading, Korean quote, S3 keys, and signed PDF links in citations |
-| Operational maturity | Runbook, teardown guide, cost model, security notes, observability notes, ADRs, admin review paths, and CI workflow |
-| Testability | Backend pytest suite, static frontend build, Terraform format/validate workflow, Korean taxonomy evaluation script |
+| IaC | Terraform in `infra/` creates private S3, encryption, lifecycle rules, IAM policies, and optional Lambda Function URL resources |
+| CI/CD | `.github/workflows/ci.yml` runs backend pytest, Next.js static build, Terraform fmt, init, and validate; deployments remain manual |
+| Security | Private S3, public-access block, SSE-S3, scoped IAM policies, env-based secrets, CORS allowlist, admin shared secrets, request limits |
+| Reliability | Manual ingestion reports, deterministic taxonomy rebuilds, vector bundle fallback, model fallback, rollback notes, S3 versioning, teardown docs |
+| Observability | JSON logs, request ids, `/health`, ingestion/taxonomy reports, retrieval evaluation output, recommended hosted metrics and alerts |
+| Cost | Static hosting, S3 vector bundle, manual jobs, no default OpenSearch/App Runner/ECR/always-on compute, lifecycle cleanup |
+| Operations | Runbook, deployment guide, security notes, cost model, troubleshooting, teardown checklist, ADRs |
+| Testing | Backend pytest suite, frontend build, Terraform validation, retrieval evaluation scripts |
+| Documentation | Architecture diagrams, technical product guide, model strategy, tradeoffs, safety notes, OCR troubleshooting, ADRs |
 
-## Architecture
+## Architecture Overview
 
 See [docs/architecture.md](docs/architecture.md) for diagrams and data flows.
 
@@ -69,16 +100,6 @@ At a high level:
 8. FastAPI resolves Korean queries into canonical topics and aliases before retrieval.
 9. FastAPI can also search existing passage text directly for category-page source results.
 10. Next.js renders taxonomy-first browsing, source-result search, admin review, and an assistant UI.
-
-## Tech Stack
-
-- Frontend: Next.js static export, React, TypeScript, Cloudflare Pages
-- Backend: FastAPI, Pydantic, SQLAlchemy, Alembic
-- AWS: S3, IAM, Bedrock Runtime, optional OpenSearch endpoint support
-- Retrieval: deterministic Korean alias matching, hybrid keyword/vector retrieval, S3 vector bundle
-- Ingestion: PyMuPDF, optional PaddleOCR, optional Tesseract Korean OCR
-- Infrastructure: Terraform for private S3 bucket and attachable IAM policies
-- Local development: Docker Compose Postgres
 
 ## Bedrock Model Profile
 
@@ -148,7 +169,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Ingestion And Taxonomy Commands
+## Ingestion And Taxonomy
 
 Put PDFs in `./pdfs`, then run manual ingestion:
 
@@ -285,7 +306,7 @@ Admin:
 
 Admin upload endpoints require `ADMIN_TOKEN`. Review endpoints use `ADMIN_PASSWORD`, with local-only fallback for development.
 
-## Verification
+## Test And Validation Commands
 
 Local checks:
 
@@ -304,7 +325,7 @@ terraform validate
 
 CI mirrors these checks in [.github/workflows/ci.yml](.github/workflows/ci.yml). No status badge is shown because a badge would imply a hosted CI history that may not exist yet on a fresh fork.
 
-## Deploy And Operate
+## Deployment Overview
 
 Detailed operational docs:
 
@@ -347,6 +368,47 @@ terraform apply \
 
 Attach `ingestion_policy_arn` to the IAM principal that runs ingestion. When `deploy_api=true`, Terraform creates and attaches the runtime role automatically.
 
+## Security Model Summary
+
+- Secrets are read from environment variables and ignored by git.
+- The default corpus bucket is private, blocks public access, uses SSE-S3, and keeps object versioning enabled.
+- Terraform emits separate ingestion and runtime IAM policies instead of broad credentials.
+- The optional Lambda runtime receives only the configured S3 and Bedrock permissions.
+- Admin ingestion requires `ADMIN_TOKEN`; review/alias flows require `ADMIN_PASSWORD` except for local-only development fallback.
+- API controls include CORS configuration, request body limits, upload size limits, rate limiting, and grounded prompts that reject unsupported answers.
+
+See [docs/security.md](docs/security.md).
+
+## Observability Model Summary
+
+- FastAPI logs are JSON-formatted and include request ids where attached.
+- `/health` reports whether required AWS, S3, vector bundle, and model settings are configured.
+- Ingestion and taxonomy reports capture per-file status, OCR diagnostics, skipped/failed files, low-confidence tags, and unmatched terms.
+- Retrieval evaluation prints resolved topics, filters, passages, source pages, and citation status before answer generation.
+- Hosted metrics and alerts are documented but not provisioned by default.
+
+See [docs/observability.md](docs/observability.md).
+
+## Cost Controls Summary
+
+- The default stack avoids always-on compute and managed search.
+- Ingestion and retrieval evaluation are manual jobs so model-call costs are explicit.
+- S3 stores durable artifacts; lifecycle rules expire old noncurrent versions after 30 days.
+- Reranking is disabled by default to avoid an extra per-query model call.
+- OpenSearch is optional and only used when an operator provides an endpoint.
+
+See [docs/cost-model.md](docs/cost-model.md).
+
+## Teardown And Cleanup
+
+Use [docs/teardown.md](docs/teardown.md) before leaving resources behind. The main cleanup paths are:
+
+- remove or roll back the Cloudflare Pages project
+- run `terraform plan -destroy` and `terraform destroy` from `infra/`
+- empty/archive S3 corpus artifacts according to retention needs
+- stop local Postgres with `docker compose down -v`
+- rotate or delete admin, database, AWS, and OpenSearch credentials
+
 ## Project Structure
 
 ```text
@@ -369,7 +431,7 @@ outputs/          Local generated reports and mapping plans, ignored except .git
 - Retrieval logs can contain user questions if persisted; review retention and privacy policy before production use.
 - Newly added taxonomy aliases do not change stored source counts until re-tag/re-index commands are run.
 
-## Next Production Hardening
+## What I Would Improve Next
 
 - Add hosted API runtime choice and deployment automation.
 - Add structured metrics and alerts for query errors, Bedrock failures, ingestion failures, and citation gaps.

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-These ADRs record the main product and platform choices. They are intentionally concise so reviewers can understand the reasoning without digging through commit history.
+These ADRs record the main product and platform choices. They are intentionally concise so operators and maintainers can understand the reasoning without digging through commit history.
 
 ## ADR 001: Taxonomy-First Archive Over Chatbot-First UI
 

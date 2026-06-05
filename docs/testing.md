@@ -1,6 +1,6 @@
 # Testing
 
-The repository uses focused tests and build checks rather than claiming broad production certification.
+Health1004 uses focused tests and build checks for archive behavior, static frontend generation, and Terraform validation.
 
 ## Backend Tests
 
@@ -82,6 +82,18 @@ GitHub Actions workflow:
 ```
 
 The workflow runs backend tests, frontend build, and Terraform format/validate. It does not deploy and does not require AWS credentials.
+
+## What Was Validated Locally
+
+Use the commands above as the local verification contract before review or handoff. They validate Python behavior, static frontend compilation, and Terraform syntax/provider configuration. They do not prove hosted AWS runtime health, Bedrock model access in a particular account, or Cloudflare deployment state.
+
+## Manual Validation
+
+- Retrieval evaluation is a qualitative script, not a statistically validated benchmark.
+- OCR quality is checked through ingestion diagnostics and manual review, not a labeled OCR benchmark.
+- Hosted API smoke tests are manual because deployment is not automatic in GitHub Actions.
+- Medical-adjacent answer safety is prompt- and citation-based, not clinical validation.
+- Browser/e2e coverage is not implemented yet.
 
 ## Gaps
 
