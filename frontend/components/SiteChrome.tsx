@@ -5,8 +5,7 @@ export function SiteHeader() {
   return (
     <header className="archive-header">
       <Link className="archive-brand" href="/">
-        <span>건</span>
-        건강미인 지식서재
+        건강1004 지식서재
       </Link>
       <nav aria-label="Primary archive navigation">
         <Link href="/symptoms/">증상/고민</Link>

@@ -1054,18 +1054,7 @@ code {
 .archive-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   font-weight: 950;
-}
-
-.archive-brand span {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  color: #fff;
-  background: var(--accent-dark);
-  border-radius: 8px;
 }
 
 .site-footer {
