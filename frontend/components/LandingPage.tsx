@@ -51,7 +51,7 @@ export function LandingPage() {
         <div className="author-intro">
           <p className="eyebrow">저자 / Author</p>
           <h2 id="author-title">정현수</h2>
-          <p className="author-role">천문학자</p>
+          <p className="author-role">건강천사</p>
           <p>
             연세대학교에서 천문기상학을 전공하고, 일본 도쿄대학에서 천문학 박사학위를 취득했습니다.
             일본 노베야마우주전파관측소 객원연구원을 거쳐 한국천문연구원에서 전파망원경을 인공전파의
