@@ -127,8 +127,8 @@ export function LandingPage() {
       <section className="archive-section">
         <div className="section-heading compact">
           <p className="eyebrow">분류로 읽기</p>
-          <h2>RAG보다 먼저, 원문을 찾는 길</h2>
-          <p>질문 하나에 의존하지 않고 주제, 별칭, 원문 조각, PDF 출처를 함께 확인합니다.</p>
+          <h2>주제와 출처로 원문 읽기</h2>
+          <p>증상, 음식, 질환, 첨가물별로 관련 문장을 찾고 PDF 출처까지 함께 확인합니다.</p>
         </div>
         <div className="category-overview-grid">
           {CATEGORY_ROUTES.slice(0, 5).map((route) => (
