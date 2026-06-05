@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { CategoryBrowser } from "../../components/CategoryBrowser";
 import { PageShell } from "../../components/SiteChrome";
 import { readStaticTopicList } from "../../lib/staticArchiveServer";
+
+export const metadata: Metadata = {
+  title: "음식"
+};
 
 export default function FoodsPage() {
   const initialTopics = readStaticTopicList("/foods");

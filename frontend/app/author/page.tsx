@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { ArchiveDisclaimer, SiteHeader } from "../../components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "저자"
+};
 
 export default function AuthorPage() {
   return (

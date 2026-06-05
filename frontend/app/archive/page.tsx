@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { DocumentBrowser } from "../../components/DocumentBrowser";
 import { PageShell } from "../../components/SiteChrome";
 import { readStaticDocumentList } from "../../lib/staticArchiveServer";
+
+export const metadata: Metadata = {
+  title: "원문 PDF"
+};
 
 export default function ArchivePage() {
   const initialDocuments = readStaticDocumentList();

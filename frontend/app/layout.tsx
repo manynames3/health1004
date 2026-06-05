@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "건강1004 지식서재",
+  title: {
+    default: "건강1004 지식서재",
+    template: "건강1004 지식 서재 | %s"
+  },
   description: "증상, 음식, 질환, 식품첨가물, 생활습관으로 찾아보는 Korean natural health archive"
 };
 

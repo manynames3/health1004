@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { CategoryBrowser } from "../../components/CategoryBrowser";
 import { PageShell } from "../../components/SiteChrome";
 import { readStaticTopicList } from "../../lib/staticArchiveServer";
+
+export const metadata: Metadata = {
+  title: "질환"
+};
 
 export default function ConditionsPage() {
   const initialTopics = readStaticTopicList("/conditions");

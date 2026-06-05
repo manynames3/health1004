@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { QueryWorkspace } from "../../components/QueryWorkspace";
 import { PageShell } from "../../components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "AI 질문"
+};
 
 export default function AskPage() {
   return (
