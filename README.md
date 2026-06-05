@@ -28,7 +28,7 @@ The app is educational and archival. It is not medical diagnosis, treatment, dos
 
 | Area | Evidence in this repo |
 | --- | --- |
-| Cloud architecture | Terraform for low-cost S3/IAM, Cloudflare Pages static frontend, FastAPI backend boundary, Bedrock integration, optional OpenSearch mapping |
+| Cloud architecture | Terraform for low-cost S3/IAM, optional Lambda Function URL backend, Cloudflare Pages static frontend, Bedrock integration, optional OpenSearch mapping |
 | Cost discipline | No always-on OpenSearch, App Runner, ECR, CloudFront, or scheduled ingestion in the default Terraform |
 | Data pipeline | Manual PDF ingestion, page-aware extraction, Korean OCR fallback, checksums, S3 artifacts, ingestion reports |
 | Retrieval design | Taxonomy resolution before hybrid search, vector bundle fallback, OpenSearch Nori support when available |
@@ -225,7 +225,7 @@ Detailed operational docs:
 - [docs/safety.md](docs/safety.md)
 - [docs/ocr-troubleshooting.md](docs/ocr-troubleshooting.md)
 
-Terraform creates only the private S3 corpus bucket and attachable IAM policies:
+Terraform creates the private S3 corpus bucket and attachable IAM policies by default. Set `deploy_api=true` to also deploy the low-cost FastAPI Lambda Function URL backend:
 
 ```bash
 cd infra
@@ -235,7 +235,17 @@ terraform apply \
   -var="bedrock_chat_model_id=<chat-model-id>"
 ```
 
-Attach `ingestion_policy_arn` to the IAM principal that runs ingestion. Attach `runtime_policy_arn` only if the FastAPI backend is hosted on AWS.
+Build and deploy the Lambda API package:
+
+```bash
+python scripts/build_lambda_package.py
+terraform apply \
+  -var="deploy_api=true" \
+  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
+```
+
+Attach `ingestion_policy_arn` to the IAM principal that runs ingestion. When `deploy_api=true`, Terraform creates and attaches the runtime role automatically.
 
 ## Project Structure
 

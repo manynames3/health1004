@@ -10,8 +10,9 @@ The default design is for a low-volume, low-maintenance archive. It avoids expen
 | S3 | Raw PDFs, extracted text, reports, vector bundles | Storage plus request costs |
 | Bedrock embeddings | Ingestion and query embeddings | Pay per model call |
 | Bedrock chat | RAG answer generation | Pay per model call |
+| Lambda Function URL | Optional FastAPI backend | Pay per request and duration, no idle compute |
 | Local Postgres | Docker Compose for development | No cloud cost |
-| Terraform | S3 and IAM only | No ongoing Terraform cost |
+| Terraform | S3/IAM by default, optional Lambda | No ongoing Terraform cost |
 
 ## Intentionally Not Provisioned By Default
 
@@ -23,7 +24,7 @@ The default design is for a low-volume, low-maintenance archive. It avoids expen
 - recurring ingestion jobs
 - scheduled crawlers
 
-The application includes OpenSearch mapping and reindex support, but Terraform does not create an OpenSearch domain. For a small archive, S3 vector bundles and taxonomy filtering are the cheaper default.
+The application includes OpenSearch mapping and reindex support, but Terraform does not create an OpenSearch domain. For a small archive, S3 vector bundles, taxonomy filtering, and Lambda on-demand API execution are the cheaper default.
 
 ## Cost Controls
 

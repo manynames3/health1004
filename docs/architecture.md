@@ -13,7 +13,7 @@ flowchart TB
         Pages["Cloudflare Pages\nNext.js static export"]
     end
 
-    subgraph App["API runtime\nlocal or on-demand host"]
+    subgraph App["API runtime\nlocal or Lambda Function URL"]
         FastAPI["FastAPI backend"]
         Resolver["Korean query resolver\naliases and taxonomy filters"]
         Retriever["Hybrid retrieval\nmetadata, keyword, vector"]
@@ -120,4 +120,4 @@ When Nori is available, mappings use a Korean analyzer. When it is not available
 
 ## Deployment Boundary
 
-Cloudflare Pages hosts the static frontend. The backend is intentionally decoupled and can run locally or on an on-demand runtime. Terraform creates private S3 storage and IAM policies only; it does not create an always-on API host.
+Cloudflare Pages hosts the static frontend. The backend is intentionally decoupled and can run locally or on a Lambda Function URL. Terraform creates private S3 storage and IAM policies by default, and can add the Lambda API when `deploy_api=true`; it does not create an always-on API host.

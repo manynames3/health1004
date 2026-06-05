@@ -25,7 +25,7 @@ Cloudflare Pages can deploy this static export from Git or direct upload. Set `N
 
 ## AWS Infrastructure
 
-Terraform creates only low-cost storage and IAM resources:
+Terraform creates low-cost storage and IAM resources by default:
 
 ```bash
 cd infra
@@ -41,7 +41,22 @@ Outputs include:
 - ingestion policy ARN
 - runtime policy ARN
 
-Attach the ingestion policy to the principal that runs `scripts/ingest.py`. Attach the runtime policy only if the backend is hosted on AWS.
+Attach the ingestion policy to the principal that runs `scripts/ingest.py`.
+
+## Lambda API Deployment
+
+The optional Lambda Function URL backend is enabled with `deploy_api=true`:
+
+```bash
+python scripts/build_lambda_package.py
+cd infra
+terraform apply \
+  -var="deploy_api=true" \
+  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
+```
+
+Pass `TF_VAR_admin_token` and `TF_VAR_admin_password` as environment variables when applying. Terraform creates the Lambda execution role and attaches the runtime policy.
 
 ## Backend Runtime
 
@@ -64,6 +79,14 @@ Any hosted backend needs:
 - `ADMIN_TOKEN`
 - `ADMIN_PASSWORD`, if review endpoints are exposed
 - `DATABASE_URL`, if structured DB features are enabled
+
+For Cloudflare Pages direct uploads, build the static frontend with:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=<api_function_url_without_trailing_slash> npm run build
+```
+
+Then deploy `frontend/out` to Pages.
 
 ## Deployment Validation
 

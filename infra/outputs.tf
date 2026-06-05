@@ -22,3 +22,13 @@ output "runtime_policy_arn" {
   description = "Attach this policy to the API runtime if hosted on AWS."
   value       = aws_iam_policy.runtime.arn
 }
+
+output "api_function_name" {
+  description = "Lambda API function name when deploy_api is true."
+  value       = var.deploy_api ? aws_lambda_function.api[0].function_name : null
+}
+
+output "api_function_url" {
+  description = "Public Lambda Function URL for the FastAPI backend when deploy_api is true."
+  value       = var.deploy_api ? aws_lambda_function_url.api[0].function_url : null
+}

@@ -1,19 +1,60 @@
 # Terraform
 
-This Terraform is intentionally low-cost for a low-volume maintenance site. It creates only:
+This Terraform is intentionally low-cost for a low-volume maintenance site.
 
-- One private S3 corpus bucket for raw PDFs, extracted text, metadata, ingestion reports, and `vector-index/chunks.json.gz`.
-- Two attachable IAM policies: one for manual ingestion and one for an optional AWS-hosted runtime with admin uploads.
+Default resources:
 
-It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend is expected to stay on Cloudflare Pages. The application includes optional OpenSearch mapping/reindex scripts, but those scripts target an existing endpoint only when `OPENSEARCH_ENDPOINT` is configured.
+- One private S3 corpus bucket for raw PDFs, extracted text, metadata, ingestion reports, and vector bundles.
+- Two attachable IAM policies: one for manual ingestion and one for an optional API runtime.
 
-## Apply
+Optional API resources when `deploy_api=true`:
+
+- One Lambda zip function for the FastAPI backend.
+- One public Lambda Function URL.
+- One Lambda execution role.
+- One CloudWatch log group with 14-day retention.
+- One S3 object for the Lambda package.
+
+It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend stays on Cloudflare Pages. OpenSearch scripts target an existing endpoint only when `OPENSEARCH_ENDPOINT` is configured.
+
+## Apply Storage Only
 
 ```bash
 terraform init
 terraform apply \
   -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=anthropic.claude-3-5-sonnet-20241022-v2:0"
+  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0"
 ```
 
-After apply, attach `ingestion_policy_arn` to the IAM principal that runs `scripts/ingest.py`. If you host the FastAPI backend on AWS Lambda or another on-demand AWS runtime, attach `runtime_policy_arn` to that runtime role so the admin upload endpoint can write corpus artifacts and rebuild the S3 vector bundle.
+## Deploy The Lambda API
+
+From the repo root:
+
+```bash
+python scripts/build_lambda_package.py
+```
+
+From `infra/`:
+
+```bash
+terraform apply \
+  -var="deploy_api=true" \
+  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
+```
+
+Pass `TF_VAR_admin_token` and `TF_VAR_admin_password` in the environment for admin endpoints.
+
+## Outputs
+
+- `corpus_bucket`
+- `ingestion_policy_arn`
+- `runtime_policy_arn`
+- `api_function_name`, when `deploy_api=true`
+- `api_function_url`, when `deploy_api=true`
+
+Attach `ingestion_policy_arn` to the IAM principal that runs `scripts/ingest.py`. When `deploy_api=true`, Terraform creates the Lambda runtime role and attaches the runtime policy automatically.
+
+## Limits
+
+The Lambda Function URL path is suitable for low-volume browse/query traffic and small admin checks. Large browser uploads are constrained by Lambda synchronous payload limits, so bulk PDF ingestion should use the CLI/S3 path or a future direct-to-S3 multipart upload flow.

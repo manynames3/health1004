@@ -8,7 +8,7 @@ If the static site is no longer needed, remove the Pages project in the Cloudfla
 
 ## AWS Terraform Resources
 
-Terraform creates S3 and IAM resources. From `infra/`:
+Terraform creates S3/IAM resources and, when `deploy_api=true`, Lambda Function URL resources. From `infra/`:
 
 ```bash
 terraform plan -destroy
@@ -16,6 +16,8 @@ terraform destroy
 ```
 
 If the bucket contains objects, empty or archive the bucket first according to your retention requirements.
+
+Lambda logs are stored in `/aws/lambda/health1004-api` with the configured retention period and are removed by `terraform destroy` when managed by this stack.
 
 ## S3 Corpus Artifacts
 
