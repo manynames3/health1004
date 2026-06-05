@@ -35,27 +35,34 @@ export default function AuthorPage() {
           </p>
         </article>
 
-        <dl className="author-profile-list">
-          <div>
-            <dt>학력</dt>
-            <dd>도쿄대학 천문학 박사학위</dd>
-            <dd>연세대학교 천문기상학 전공</dd>
-          </div>
-          <div>
-            <dt>경력</dt>
-            <dd>일본 노베야마우주전파관측소 객원연구원</dd>
-            <dd>한국천문연구원 근무</dd>
-            <dd>국제전기통신연합(ITU) 과학연구반(SG7) 부의장</dd>
-          </div>
-          <div>
-            <dt>출생지</dt>
-            <dd>대한민국</dd>
-          </div>
-          <div>
-            <dt>옮긴 책</dt>
-            <dd>밀리미터파 공학, 초신성 1987A와 별의 성장, 전파로 본 우주, 암흑우주 등</dd>
-          </div>
-        </dl>
+        <aside className="author-side-column" aria-label="정현수 저자 프로필">
+          <figure className="author-photo-card">
+            <img src="/author-hs.jpg" alt="자연 속에서 미소 짓는 정현수 저자" />
+            <figcaption>정현수 · 건강천사</figcaption>
+          </figure>
+
+          <dl className="author-profile-list">
+            <div>
+              <dt>학력</dt>
+              <dd>도쿄대학 천문학 박사학위</dd>
+              <dd>연세대학교 천문기상학 전공</dd>
+            </div>
+            <div>
+              <dt>경력</dt>
+              <dd>일본 노베야마우주전파관측소 객원연구원</dd>
+              <dd>한국천문연구원 근무</dd>
+              <dd>국제전기통신연합(ITU) 과학연구반(SG7) 부의장</dd>
+            </div>
+            <div>
+              <dt>출생지</dt>
+              <dd>대한민국</dd>
+            </div>
+            <div>
+              <dt>옮긴 책</dt>
+              <dd>밀리미터파 공학, 초신성 1987A와 별의 성장, 전파로 본 우주, 암흑우주 등</dd>
+            </div>
+          </dl>
+        </aside>
       </section>
     </PageShell>
   );

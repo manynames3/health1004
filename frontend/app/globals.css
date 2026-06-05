@@ -1361,6 +1361,34 @@ code {
   font-size: 1.02rem;
 }
 
+.author-side-column {
+  display: grid;
+  gap: 16px;
+}
+
+.author-photo-card {
+  margin: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--soft-shadow);
+}
+
+.author-photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.author-photo-card figcaption {
+  padding: 12px 14px;
+  color: var(--accent-dark);
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
 .author-profile-list {
   display: grid;
   gap: 14px;
