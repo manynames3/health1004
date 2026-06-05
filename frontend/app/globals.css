@@ -1148,15 +1148,15 @@ code {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  min-height: 67px;
+  min-height: 80px;
   font-weight: 950;
 }
 
 .archive-brand img {
   display: block;
-  width: 221px;
-  height: 67px;
-  max-width: min(230px, 62vw);
+  width: 265px;
+  height: 80px;
+  max-width: min(276px, 74vw);
   object-fit: cover;
   object-position: center;
 }

@@ -96,15 +96,18 @@ export function CategoryBrowser({
     };
   }, [filter, endpoint]);
 
+  const topicsWithSources = useMemo(() => topics.filter((topic) => topic.source_count > 0), [topics]);
   const filtered = useMemo(() => {
     const needle = filter.trim().toLowerCase();
-    if (!needle) return topics;
+    if (!needle) return topicsWithSources;
     return topics.filter((topic) => `${topic.title} ${topic.english_title || ""} ${topic.aliases.join(" ")}`.toLowerCase().includes(needle));
-  }, [topics, filter]);
+  }, [topics, topicsWithSources, filter]);
   const trimmedFilter = filter.trim();
   const scopeLabel = endpointLabel(endpoint);
   const topicCountLabel =
-    loading && topics.length === 0 ? "주제 목록 불러오는 중" : `등록된 ${scopeLabel} 주제 ${topics.length.toLocaleString()}개`;
+    loading && topics.length === 0
+      ? "주제 목록 불러오는 중"
+      : `관련 원문이 있는 ${scopeLabel} 주제 ${topicsWithSources.length.toLocaleString()}개`;
 
   return (
     <section className="browse-panel">
