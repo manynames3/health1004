@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any, Optional
 
@@ -10,6 +11,9 @@ DATE_PATTERNS = [
     re.compile(r"(?P<year>20\d{2})(?P<month>\d{2})(?P<day>\d{2})"),
     re.compile(r"(?P<year>20\d{2})년\s*(?P<month>\d{1,2})월\s*(?P<day>\d{1,2})일"),
 ]
+HEALTH1004_EPISODE_RE = re.compile(
+    r"3\s*탄\s*[-_\s]*건강미인\s*[\(\[（]?\s*迷人\s*[\)\]）]?\s*[-_\s]*(?P<episode>\d{1,3})(?!\d)"
+)
 
 PAGE_NUMBER_RE = re.compile(r"^-+\s*\d+\s*-+$")
 HEADER_ISSUE_RE = re.compile(
@@ -165,6 +169,24 @@ def detect_title_date(filename: str, first_page_text: str = "") -> tuple[str, Op
         )
         title = first_nonempty[:120] if first_nonempty else stem
     return title, detected_date
+
+
+def detect_health1004_episode_number(*values: Optional[str]) -> Optional[int]:
+    for value in values:
+        if not value:
+            continue
+        normalized = unicodedata.normalize("NFC", str(value))
+        if normalized.strip().isdigit():
+            episode = int(normalized.strip())
+            if 1 <= episode <= 365:
+                return episode
+        match = HEALTH1004_EPISODE_RE.search(normalized)
+        if not match:
+            continue
+        episode = int(match.group("episode"))
+        if 1 <= episode <= 365:
+            return episode
+    return None
 
 
 def infer_section_title(text: str, fallback: str) -> str:

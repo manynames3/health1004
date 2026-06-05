@@ -1,4 +1,5 @@
 from app.extraction import (
+    detect_health1004_episode_number,
     detect_title_date,
     extraction_quality,
     normalize_korean_pdf_text,
@@ -20,6 +21,18 @@ def test_detect_title_date_from_filename():
     title, detected_date = detect_title_date("newsletter_2024-03-08_weekly.pdf")
     assert detected_date == "2024-03-08"
     assert "newsletter" in title
+
+
+def test_detect_health1004_episode_number_from_korean_filename():
+    assert detect_health1004_episode_number("3탄 건강미인(迷人) 42 암예방과 치유 24(혈관오염 6).pdf") == 42
+    assert detect_health1004_episode_number("3탄-건강미인(迷人)-364-사행습관-식품화학첨가물-4.pdf") == 364
+    assert detect_health1004_episode_number("3탄-건강미인(迷人)-12-소화.pdf") == 12
+    assert detect_health1004_episode_number("42") == 42
+
+
+def test_detect_health1004_episode_number_ignores_non_episode_series_files():
+    assert detect_health1004_episode_number("3탄-건강미인(迷人)-종합편-7(혈관오염).pdf") is None
+    assert detect_health1004_episode_number("3탄-건강미인(迷人)-366-범위밖.pdf") is None
 
 
 def test_normalize_whitespace_preserves_paragraphs():

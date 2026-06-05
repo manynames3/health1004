@@ -10,6 +10,7 @@ from app.bedrock import BedrockRuntime
 from app.chunking import PageText, chunk_pages
 from app.config import Settings
 from app.extraction import (
+    detect_health1004_episode_number,
     detect_title_date,
     extraction_quality,
     normalize_korean_pdf_text,
@@ -192,6 +193,8 @@ def process_pdf(
 
     first_page_text = pages[0].text if pages else ""
     title, detected_date = detect_title_date(pdf_path.name, first_page_text)
+    episode_number = detect_health1004_episode_number(pdf_path.name, title)
+    lesson_number = str(episode_number) if episode_number is not None else None
     language = detect_language("\n".join(page.text for page in pages))
 
     page_payload = {
@@ -199,6 +202,7 @@ def process_pdf(
         "filename": pdf_path.name,
         "title": title,
         "detected_date": detected_date,
+        "lesson_number": lesson_number,
         "language": language,
         "extraction_method": extraction_method,
         "extraction_diagnostics": diagnostics,
@@ -233,6 +237,7 @@ def process_pdf(
         "title": title,
         "filename": pdf_path.name,
         "detected_date": detected_date,
+        "lesson_number": lesson_number,
         "language": language,
         "page_count": len(pages),
         "chunk_count": len(chunks),
@@ -275,6 +280,7 @@ def process_pdf(
         "extraction_method": extraction_method,
         "extraction_diagnostics": diagnostics,
         "pdf_s3_key": pdf_s3_key,
+        "lesson_number": lesson_number,
         "extracted_json_s3_key": extracted_json_key,
         "extracted_markdown_s3_key": extracted_markdown_key,
     }

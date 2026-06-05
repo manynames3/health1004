@@ -99,6 +99,7 @@ export function DocumentBrowser() {
                 <Link href={`/documents/document/?id=${encodeURIComponent(doc.document_id)}`}>{doc.title}</Link>
               </h3>
               <p>
+                {doc.lesson_number ? `#${doc.lesson_number} · ` : ""}
                 {doc.page_count}쪽 · 원문 조각 {doc.chunk_count}개
               </p>
               <span>{doc.filename}</span>

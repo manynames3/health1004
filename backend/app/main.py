@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import archive
 from app.config import get_settings
+from app.extraction import detect_health1004_episode_number
 from app.ingestion import ingest_pdf_paths
 from app.logging_config import configure_logging
 from app.models import (
@@ -366,7 +367,7 @@ def documents(
             if needle not in haystack:
                 continue
         docs.append(DocumentSummary(**document_list_payload(document)))
-    docs.sort(key=lambda document: (document.detected_date or "", document.title), reverse=True)
+    docs.sort(key=document_archive_sort_key)
     total = len(docs)
     page = docs[offset : offset + limit]
     for document in page:
@@ -388,10 +389,13 @@ def document_detail(document_id: str) -> DocumentDetail:
 
 
 def document_list_payload(document: dict) -> dict:
+    title = document.get("title") or document.get("filename") or "Untitled document"
+    filename = document.get("filename") or ""
+    episode_number = detect_health1004_episode_number(document.get("lesson_number"), filename, title)
     return {
         "document_id": document.get("document_id"),
-        "title": document.get("title") or document.get("filename") or "Untitled document",
-        "filename": document.get("filename") or "",
+        "title": title,
+        "filename": filename,
         "detected_date": document.get("detected_date"),
         "language": document.get("language") or "unknown",
         "page_count": document.get("page_count") or 0,
@@ -399,7 +403,14 @@ def document_list_payload(document: dict) -> dict:
         "extraction_method": document.get("extraction_method"),
         "series": document.get("series"),
         "volume": document.get("volume"),
-        "lesson_number": document.get("lesson_number"),
+        "lesson_number": str(episode_number) if episode_number is not None else document.get("lesson_number"),
         "pdf_s3_key": document.get("pdf_s3_key"),
         "checksum": document.get("checksum"),
     }
+
+
+def document_archive_sort_key(document: DocumentSummary) -> tuple[int, int, str]:
+    episode_number = detect_health1004_episode_number(document.lesson_number, document.filename, document.title)
+    if episode_number is not None:
+        return (0, episode_number, document.title)
+    return (1, 0, document.title or document.filename)
