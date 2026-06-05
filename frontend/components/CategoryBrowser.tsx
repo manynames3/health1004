@@ -53,13 +53,23 @@ export function CategoryBrowser({
     if (!needle) return topics;
     return topics.filter((topic) => `${topic.title} ${topic.english_title || ""} ${topic.aliases.join(" ")}`.toLowerCase().includes(needle));
   }, [topics, filter]);
+  const trimmedFilter = filter.trim();
+  const scopeLabel = endpointLabel(endpoint);
+  const topicCountLabel =
+    loading && topics.length === 0 ? "주제 목록 불러오는 중" : `등록된 ${scopeLabel} 주제 ${topics.length.toLocaleString()}개`;
 
   return (
     <section className="browse-panel">
       <label className="input-with-icon">
         <Search size={18} aria-hidden="true" />
-        <input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="주제, 별칭, 영어명 검색" />
+        <input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder={`${scopeLabel} 주제, 별칭 검색`} />
       </label>
+      <div className="category-search-meta">
+        <span>{topicCountLabel}</span>
+        {trimmedFilter && (
+          <Link href={`/ask/?q=${encodeURIComponent(trimmedFilter)}`}>원문 전체에서 질문하기</Link>
+        )}
+      </div>
       {loading && (
         <div className="empty-state">
           <Loader2 className="spin" size={18} aria-hidden="true" />
@@ -67,7 +77,17 @@ export function CategoryBrowser({
         </div>
       )}
       {error && <div className="error-box">{error}</div>}
-      {!loading && !error && filtered.length === 0 && <div className="empty-state">{emptyText}</div>}
+      {!loading && !error && filtered.length === 0 && (
+        <div className="category-empty-state">
+          <p>{trimmedFilter ? `등록된 ${scopeLabel} 주제 중 일치 항목이 없습니다.` : emptyText}</p>
+          {trimmedFilter && (
+            <div className="category-empty-actions">
+              <Link href={`/ask/?q=${encodeURIComponent(trimmedFilter)}`}>원문 전체에서 질문하기</Link>
+              {endpoint !== "/topics" && <Link href="/topics/">전체 주제에서 찾기</Link>}
+            </div>
+          )}
+        </div>
+      )}
       <div className="archive-topic-grid">
         {filtered.map((topic) => (
           <Link className="archive-topic-card" href={`/topics/${topic.slug}/`} key={topic.slug}>
@@ -93,6 +113,19 @@ function categoryLabel(category: string): string {
       substances: "첨가물/물질",
       habits: "생활습관"
     }[category] || category
+  );
+}
+
+function endpointLabel(endpoint: string): string {
+  return (
+    {
+      "/topics": "전체",
+      "/symptoms": "증상/고민",
+      "/foods": "음식/식재료",
+      "/conditions": "질환",
+      "/substances": "첨가물/물질",
+      "/habits": "생활습관"
+    }[endpoint] || "현재 분류"
   );
 }
 
