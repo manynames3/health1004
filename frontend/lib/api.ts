@@ -201,7 +201,7 @@ function adminHeaders(adminToken: string): HeadersInit {
 
 function ensureApiConfigured(): void {
   if (!API_BASE_URL) {
-    throw new Error("API endpoint is not configured. Set NEXT_PUBLIC_API_BASE_URL to the deployed FastAPI backend URL.");
+    throw new Error("API endpoint is unavailable.");
   }
 }
 
