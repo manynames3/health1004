@@ -1600,6 +1600,93 @@ code {
   gap: 8px;
 }
 
+.source-search-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.source-search-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.source-search-heading h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.source-search-heading a,
+.source-result-card footer a {
+  color: var(--accent-dark);
+  background: #eaf7ef;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.86rem;
+  font-weight: 950;
+}
+
+.source-search-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.source-search-summary span,
+.source-search-summary small {
+  padding: 5px 8px;
+  background: #f6faf7;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.source-result-list {
+  display: grid;
+  gap: 10px;
+}
+
+.source-result-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.source-result-card h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.source-result-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.source-result-card blockquote {
+  margin: 0;
+  padding-left: 10px;
+  color: var(--text);
+  border-left: 3px solid #b9d8c8;
+}
+
+.source-result-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .admin-dashboard .review-panel {
   margin-bottom: 0;
 }
@@ -1734,6 +1821,47 @@ code {
 .review-password-row input {
   min-height: 42px;
   padding: 0 12px;
+}
+
+.alias-suggestion-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.alias-suggestion-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.alias-suggestion-form input,
+.alias-suggestion-form select,
+.alias-suggestion-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfa;
+  font: inherit;
+}
+
+.alias-suggestion-form label:has(textarea),
+.alias-suggestion-form button {
+  grid-column: 1 / -1;
+}
+
+.alias-suggestion-form button {
+  min-height: 42px;
+  color: #fff;
+  background: var(--accent-dark);
+  border: 0;
+  border-radius: 8px;
+  font-weight: 950;
 }
 
 .success-box {
@@ -1898,6 +2026,15 @@ code {
   .category-search-meta {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .source-search-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .alias-suggestion-form {
+    grid-template-columns: 1fr;
   }
 
   .query-actions label,

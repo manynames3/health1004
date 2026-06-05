@@ -16,6 +16,8 @@ def test_taxonomy_seed_loads_required_categories():
 
     assert taxonomy.term("milk").title == "우유"
     assert taxonomy.term("sodium-benzoate").title == "안식향산나트륨"
+    assert taxonomy.term("caramel-color").title == "카라멜색소"
+    assert taxonomy.term("emulsifier").title == "유화제"
     assert len(taxonomy.terms_for_category("symptoms")) >= 20
 
 

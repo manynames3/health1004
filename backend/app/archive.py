@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -8,7 +9,15 @@ from sqlalchemy import select
 from app.config import Settings
 from app.models import DocumentSummary, RetrievedChunk, TopicDetailResponse, TopicSummary
 from app.s3_store import S3Storage
-from app.taxonomy import CATEGORY_FILTER_FIELDS, Taxonomy, load_taxonomy, term_to_dict
+from app.taxonomy import (
+    CATEGORY_FILTER_FIELDS,
+    Taxonomy,
+    load_taxonomy,
+    normalize_for_match,
+    normalize_search_text,
+    resolve_query,
+    term_to_dict,
+)
 from app.vector_bundle import VectorRecord, parse_vector_bundle, record_matches_filters
 
 
@@ -78,6 +87,40 @@ def passages_for_filters(settings: Settings, filters: dict[str, list[str]], limi
         if len(chunks) >= limit:
             break
     return chunks
+
+
+def search_passages(settings: Settings, query: str, category: str | None = None, limit: int = 8) -> dict[str, Any]:
+    taxonomy = load_archive_taxonomy(settings)
+    resolved = resolve_query(query, taxonomy)
+    filters = _category_filters(resolved.get("matched_topic_slugs", []), category, taxonomy)
+    records = vector_records_from_storage(settings)
+    filtered_records = [record for record in records if record_matches_filters(record.chunk, filters)]
+    fallback_used = False
+    candidate_records = filtered_records
+    if len(candidate_records) < limit:
+        fallback_used = bool(filters)
+        candidate_records = records
+
+    scored = _score_passage_records(
+        candidate_records,
+        query=query,
+        expanded_aliases=resolved.get("expanded_aliases", []),
+        filters=filters,
+        category=category,
+        taxonomy=taxonomy,
+    )
+    passages = [RetrievedChunk(score=score, **record.chunk) for score, record in scored[:limit]]
+    return {
+        "query": query,
+        "category": category,
+        "matched_topics": resolved.get("matched_topics", []),
+        "matched_topic_slugs": resolved.get("matched_topic_slugs", []),
+        "expanded_aliases": resolved.get("expanded_aliases", []),
+        "filters_used": filters,
+        "fallback_used": fallback_used,
+        "passages": passages,
+        "total": len(scored),
+    }
 
 
 def low_confidence_passages(settings: Settings, limit: int = 50) -> list[RetrievedChunk]:
@@ -165,3 +208,104 @@ def related_documents_from_passages(settings: Settings, passages: list[Retrieved
             )
         )
     return documents
+
+
+def _category_filters(matched_slugs: list[str], category: str | None, taxonomy: Taxonomy) -> dict[str, list[str]]:
+    if not category or category not in CATEGORY_FILTER_FIELDS:
+        return {}
+    category_slugs = [
+        slug
+        for slug in matched_slugs
+        if taxonomy.term(slug) and taxonomy.term(slug).category == category
+    ]
+    if not category_slugs:
+        return {}
+    field = CATEGORY_FILTER_FIELDS[category]
+    return {"topic_slugs": category_slugs, field: category_slugs}
+
+
+def _score_passage_records(
+    records: list[VectorRecord],
+    *,
+    query: str,
+    expanded_aliases: list[str],
+    filters: dict[str, list[str]],
+    category: str | None,
+    taxonomy: Taxonomy,
+) -> list[tuple[float, VectorRecord]]:
+    normalized_needles = _search_needles(query, expanded_aliases)
+    query_tokens = _search_tokens(query, expanded_aliases)
+    scored: list[tuple[float, VectorRecord]] = []
+    for record in records:
+        chunk = record.chunk
+        haystack = _chunk_search_haystack(chunk, taxonomy)
+        normalized_haystack = normalize_for_match(haystack)
+        token_haystack = set(_search_tokens(haystack, []))
+        exact_hits = sum(1 for needle in normalized_needles if needle and needle in normalized_haystack)
+        token_hits = len(set(query_tokens) & token_haystack)
+        if exact_hits == 0 and token_hits == 0:
+            continue
+        filter_bonus = 0.25 if filters and record_matches_filters(chunk, filters) else 0.0
+        category_bonus = _category_bonus(chunk, category)
+        title_bonus = 0.18 if any(needle in normalize_for_match(_chunk_title_haystack(chunk)) for needle in normalized_needles) else 0.0
+        score = (0.9 * exact_hits) + (0.12 * token_hits) + filter_bonus + category_bonus + title_bonus
+        scored.append((round(score, 6), record))
+    scored.sort(key=lambda item: (item[0], item[1].chunk.get("title", "")), reverse=True)
+    return scored
+
+
+def _search_needles(query: str, expanded_aliases: list[str]) -> list[str]:
+    needles = [normalize_for_match(value) for value in [query, *expanded_aliases] if value]
+    return list(dict.fromkeys(needle for needle in needles if len(needle) >= 2))
+
+
+def _search_tokens(query: str, expanded_aliases: list[str]) -> list[str]:
+    text = normalize_search_text(" ".join([query, *expanded_aliases]))
+    tokens = re.findall(r"[\uac00-\ud7a3]{2,}|[A-Za-z0-9]{2,}", text)
+    return list(dict.fromkeys(token.lower() for token in tokens))
+
+
+def _chunk_search_haystack(chunk: dict[str, Any], taxonomy: Taxonomy) -> str:
+    matched_aliases = [
+        str(match.get("alias", ""))
+        for match in chunk.get("matched_aliases", []) or []
+        if isinstance(match, dict)
+    ]
+    topic_titles = [
+        taxonomy.term(slug).title
+        for slug in chunk.get("topic_slugs", []) or []
+        if taxonomy.term(slug)
+    ]
+    return " ".join(
+        [
+            _chunk_title_haystack(chunk),
+            str(chunk.get("text", "")),
+            " ".join(matched_aliases),
+            " ".join(topic_titles),
+            " ".join(chunk.get("topic_slugs", []) or []),
+            " ".join(chunk.get("substance_slugs", []) or []),
+            " ".join(chunk.get("food_slugs", []) or []),
+            " ".join(chunk.get("condition_slugs", []) or []),
+        ]
+    )
+
+
+def _chunk_title_haystack(chunk: dict[str, Any]) -> str:
+    return " ".join(
+        [
+            str(chunk.get("title", "")),
+            str(chunk.get("section_title", "")),
+            str(chunk.get("filename", "")),
+        ]
+    )
+
+
+def _category_bonus(chunk: dict[str, Any], category: str | None) -> float:
+    if not category:
+        return 0.0
+    field = CATEGORY_FILTER_FIELDS.get(category)
+    if not field:
+        return 0.0
+    if chunk.get(field):
+        return 0.1
+    return 0.0

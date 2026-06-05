@@ -142,6 +142,18 @@ export interface PassageListResponse {
   total: number;
 }
 
+export interface PassageSearchResponse {
+  query: string;
+  category?: string | null;
+  matched_topics: string[];
+  matched_topic_slugs: string[];
+  expanded_aliases: string[];
+  filters_used: Record<string, string[]>;
+  fallback_used: boolean;
+  passages: RetrievedChunk[];
+  total: number;
+}
+
 export interface AdminStatus {
   admin_configured: boolean;
   aws_region_configured: boolean;
@@ -183,4 +195,10 @@ export interface AdminIngestResponse {
 export interface AdminReviewTagResponse {
   status: "updated" | "not_configured";
   chunk_id: string;
+}
+
+export interface AdminAliasSuggestionResponse {
+  status: "saved";
+  suggestion_count: number;
+  key: string;
 }

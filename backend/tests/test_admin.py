@@ -2,6 +2,7 @@ import pytest
 from fastapi import HTTPException, Response
 
 from app import main
+from app.models import AdminAliasSuggestionRequest
 
 
 def test_unique_filename_deduplicates_pdf_names():
@@ -48,3 +49,33 @@ def test_cache_archive_response_sets_public_cache_header():
     main.cache_archive_response(response)
 
     assert response.headers["Cache-Control"] == main.ARCHIVE_CACHE_CONTROL
+
+
+def test_admin_alias_suggestion_stores_pending_suggestion(monkeypatch):
+    class FakeStorage:
+        def __init__(self, _settings):
+            self.payload = {"suggestions": []}
+
+        def get_json(self, key: str):
+            assert key == main.ALIAS_SUGGESTIONS_KEY
+            return self.payload
+
+        def put_json(self, key: str, payload):
+            assert key == main.ALIAS_SUGGESTIONS_KEY
+            self.payload = payload
+
+    fake = FakeStorage(None)
+    monkeypatch.setattr(main, "S3Storage", lambda settings: fake)
+
+    response = main.admin_alias_suggestion(
+        AdminAliasSuggestionRequest(
+            query="카라멜색소",
+            category="substances",
+            suggested_alias="카라멜색소",
+            canonical_slug="caramel-color",
+        )
+    )
+
+    assert response.status == "saved"
+    assert fake.payload["suggestions"][0]["suggested_alias"] == "카라멜색소"
+    assert fake.payload["suggestions"][0]["status"] == "pending"

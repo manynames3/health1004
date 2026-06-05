@@ -1,5 +1,6 @@
 import secrets
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -23,6 +24,8 @@ from app.extraction import detect_health1004_episode_number
 from app.ingestion import ingest_pdf_paths
 from app.logging_config import configure_logging
 from app.models import (
+    AdminAliasSuggestionRequest,
+    AdminAliasSuggestionResponse,
     AdminIngestResponse,
     AdminReviewTagRequest,
     AdminReviewTagResponse,
@@ -32,6 +35,7 @@ from app.models import (
     DocumentSummary,
     HealthResponse,
     PassageListResponse,
+    PassageSearchResponse,
     QueryRequest,
     QueryResponse,
     ResolveQueryRequest,
@@ -49,6 +53,7 @@ settings = get_settings()
 configure_logging(settings.log_level)
 
 ARCHIVE_CACHE_CONTROL = "public, max-age=900, stale-while-revalidate=86400"
+ALIAS_SUGGESTIONS_KEY = "admin/alias_suggestions.json"
 
 app = FastAPI(
     title="Korean Natural Health PDF RAG API",
@@ -191,6 +196,21 @@ def passages(topic: str | None = None, limit: int = 20) -> PassageListResponse:
     return PassageListResponse(passages=results, total=len(results))
 
 
+@app.get("/search/passages", response_model=PassageSearchResponse)
+def search_passages(
+    q: str = Query(..., min_length=1, max_length=200),
+    category: str | None = Query(default=None, max_length=60),
+    limit: int = Query(default=8, ge=1, le=20),
+) -> PassageSearchResponse:
+    if category and category not in {"body_systems", "symptoms", "conditions", "foods", "substances", "habits"}:
+        raise HTTPException(status_code=400, detail="Unsupported category")
+    try:
+        payload = archive.search_passages(settings, query=q, category=category, limit=limit)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return PassageSearchResponse(**payload)
+
+
 @app.post("/query/resolve", response_model=ResolvedQuery)
 def query_resolve(request: ResolveQueryRequest) -> ResolvedQuery:
     taxonomy_data = load_taxonomy(settings.taxonomy_seed_path)
@@ -276,6 +296,37 @@ async def admin_ingest(
 def admin_low_confidence_passages(_: None = Depends(require_admin_review), limit: int = 50) -> PassageListResponse:
     results = archive.low_confidence_passages(settings, limit=limit)
     return PassageListResponse(passages=results, total=len(results))
+
+
+@app.post("/admin/alias-suggestion", response_model=AdminAliasSuggestionResponse)
+def admin_alias_suggestion(
+    request: AdminAliasSuggestionRequest,
+    _: None = Depends(require_admin_review),
+) -> AdminAliasSuggestionResponse:
+    try:
+        storage = S3Storage(settings)
+        payload = storage.get_json(ALIAS_SUGGESTIONS_KEY) or {"suggestions": []}
+        suggestions = payload.setdefault("suggestions", [])
+        suggestions.append(
+            {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "query": request.query.strip(),
+                "category": request.category.strip(),
+                "suggested_alias": request.suggested_alias.strip(),
+                "canonical_slug": request.canonical_slug.strip() if request.canonical_slug else None,
+                "notes": request.notes.strip() if request.notes else None,
+                "sample_chunk_ids": request.sample_chunk_ids[:10],
+                "status": "pending",
+            }
+        )
+        storage.put_json(ALIAS_SUGGESTIONS_KEY, payload)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return AdminAliasSuggestionResponse(
+        status="saved",
+        suggestion_count=len(suggestions),
+        key=ALIAS_SUGGESTIONS_KEY,
+    )
 
 
 @app.post("/admin/review-tag", response_model=AdminReviewTagResponse)

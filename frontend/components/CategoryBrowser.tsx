@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { fetchTopics } from "../lib/api";
-import { TopicListResponse, TopicSummary } from "../types";
+import { fetchTopics, searchPassages } from "../lib/api";
+import { PassageSearchResponse, RetrievedChunk, TopicListResponse, TopicSummary } from "../types";
 
-const CATEGORY_CACHE_VERSION = "v1";
+const CATEGORY_CACHE_VERSION = "v2";
 const CATEGORY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function CategoryBrowser({
@@ -20,6 +20,9 @@ export function CategoryBrowser({
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sourceSearch, setSourceSearch] = useState<PassageSearchResponse | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const [sourceError, setSourceError] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -47,6 +50,39 @@ export function CategoryBrowser({
       ignore = true;
     };
   }, [endpoint]);
+
+  useEffect(() => {
+    const query = filter.trim();
+    if (query.length < 2) {
+      setSourceSearch(null);
+      setSourceError("");
+      setSourceLoading(false);
+      return;
+    }
+    let ignore = false;
+    setSourceLoading(true);
+    setSourceError("");
+    const timer = window.setTimeout(() => {
+      searchPassages({ query, category: endpointCategory(endpoint), limit: 6 })
+        .then((payload) => {
+          if (ignore) return;
+          setSourceSearch(payload);
+        })
+        .catch((err: Error) => {
+          if (!ignore) {
+            setSourceSearch(null);
+            setSourceError(formatError(err));
+          }
+        })
+        .finally(() => {
+          if (!ignore) setSourceLoading(false);
+        });
+    }, 250);
+    return () => {
+      ignore = true;
+      window.clearTimeout(timer);
+    };
+  }, [filter, endpoint]);
 
   const filtered = useMemo(() => {
     const needle = filter.trim().toLowerCase();
@@ -99,6 +135,64 @@ export function CategoryBrowser({
           </Link>
         ))}
       </div>
+
+      {trimmedFilter.length >= 2 && (
+        <section className="source-search-section" aria-label="Original archive results">
+          <div className="source-search-heading">
+            <div>
+              <p className="eyebrow">원문 결과</p>
+              <h2>PDF 안에서 찾은 관련 조각</h2>
+            </div>
+            <Link href={`/admin/?alias=${encodeURIComponent(trimmedFilter)}&category=${encodeURIComponent(endpointCategory(endpoint) || "topics")}`}>
+              새 별칭으로 제안
+            </Link>
+          </div>
+
+          {sourceLoading && (
+            <div className="empty-state">
+              <Loader2 className="spin" size={18} aria-hidden="true" />
+              원문 조각을 검색하는 중입니다.
+            </div>
+          )}
+          {sourceError && <div className="error-box">{sourceError}</div>}
+          {!sourceLoading && !sourceError && sourceSearch && (
+            <>
+              <div className="source-search-summary">
+                <span>
+                  원문 조각 {sourceSearch.total.toLocaleString()}개
+                  {sourceSearch.fallback_used ? " · 전체 원문까지 확장 검색" : ""}
+                </span>
+                {sourceSearch.matched_topics.length > 0 && (
+                  <small>연결된 주제: {sourceSearch.matched_topics.slice(0, 5).join(", ")}</small>
+                )}
+                {sourceSearch.expanded_aliases.length > 0 && (
+                  <small>확장어: {sourceSearch.expanded_aliases.slice(0, 6).join(", ")}</small>
+                )}
+              </div>
+
+              {sourceSearch.passages.length === 0 ? (
+                <div className="empty-state">원문에서도 일치하는 조각을 찾지 못했습니다.</div>
+              ) : (
+                <div className="source-result-list">
+                  {sourceSearch.passages.map((passage) => (
+                    <article className="source-result-card" key={passage.chunk_id}>
+                      <h3>{passage.section_title || passage.title}</h3>
+                      <p>
+                        {passage.filename} · p.{formatPages(passage)}
+                      </p>
+                      <blockquote>{excerpt(passage.text)}</blockquote>
+                      <footer>
+                        <Link href={`/documents/document/?id=${encodeURIComponent(passage.document_id)}`}>문서 보기</Link>
+                        <Link href={`/ask/?q=${encodeURIComponent(trimmedFilter)}`}>원문 기반으로 질문하기</Link>
+                      </footer>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
     </section>
   );
 }
@@ -127,6 +221,32 @@ function endpointLabel(endpoint: string): string {
       "/habits": "생활습관"
     }[endpoint] || "현재 분류"
   );
+}
+
+function endpointCategory(endpoint: string): string | undefined {
+  return (
+    {
+      "/symptoms": "symptoms",
+      "/foods": "foods",
+      "/conditions": "conditions",
+      "/substances": "substances",
+      "/habits": "habits"
+    }[endpoint]
+  );
+}
+
+function formatPages(passage: RetrievedChunk): string {
+  if (passage.page_numbers?.length) {
+    const pages = [...new Set(passage.page_numbers)].sort((a, b) => a - b);
+    return pages.length === 1 ? String(pages[0]) : `${pages[0]}-${pages[pages.length - 1]}`;
+  }
+  return passage.page_start === passage.page_end ? String(passage.page_start) : `${passage.page_start}-${passage.page_end}`;
+}
+
+function excerpt(text: string, maxChars = 220): string {
+  const compact = (text || "").replace(/\s+/g, " ").trim();
+  if (compact.length <= maxChars) return compact;
+  return `${compact.slice(0, maxChars - 1).trim()}...`;
 }
 
 function formatError(error: Error): string {

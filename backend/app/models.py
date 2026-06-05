@@ -166,6 +166,33 @@ class PassageListResponse(BaseModel):
     total: int
 
 
+class PassageSearchResponse(BaseModel):
+    query: str
+    category: Optional[str] = None
+    matched_topics: list[str] = Field(default_factory=list)
+    matched_topic_slugs: list[str] = Field(default_factory=list)
+    expanded_aliases: list[str] = Field(default_factory=list)
+    filters_used: dict[str, list[str]] = Field(default_factory=dict)
+    fallback_used: bool = False
+    passages: list[RetrievedChunk]
+    total: int
+
+
+class AdminAliasSuggestionRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=200)
+    category: str = Field(default="substances", max_length=60)
+    suggested_alias: str = Field(..., min_length=1, max_length=200)
+    canonical_slug: Optional[str] = Field(default=None, max_length=120)
+    notes: Optional[str] = Field(default=None, max_length=1000)
+    sample_chunk_ids: list[str] = Field(default_factory=list)
+
+
+class AdminAliasSuggestionResponse(BaseModel):
+    status: Literal["saved"]
+    suggestion_count: int
+    key: str
+
+
 class AdminReviewTagRequest(BaseModel):
     chunk_id: str
     topic_slugs: list[str] = Field(default_factory=list)

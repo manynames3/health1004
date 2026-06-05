@@ -1,10 +1,12 @@
 import {
   AdminIngestResponse,
+  AdminAliasSuggestionResponse,
   AdminReviewTagResponse,
   AdminStatus,
   DocumentListResponse,
   DocumentSummary,
   PassageListResponse,
+  PassageSearchResponse,
   QueryResponse,
   ResolvedQuery,
   TaxonomyResponse,
@@ -103,6 +105,26 @@ export async function fetchPassages(topic: string, limit = 20): Promise<PassageL
   if (!response.ok) {
     const detail = await readError(response);
     throw new Error(detail || `Passage fetch failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function searchPassages({
+  query,
+  category,
+  limit = 6
+}: {
+  query: string;
+  category?: string;
+  limit?: number;
+}): Promise<PassageSearchResponse> {
+  ensureApiConfigured();
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  if (category) params.set("category", category);
+  const response = await fetch(`${API_BASE_URL}/search/passages?${params}`, { cache: "no-store" });
+  if (!response.ok) {
+    const detail = await readError(response);
+    throw new Error(detail || `Passage search failed with status ${response.status}`);
   }
   return response.json();
 }
@@ -206,6 +228,46 @@ export async function reviewTag({
   if (!response.ok) {
     const detail = await readError(response);
     throw new Error(detail || `Review update failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function suggestAlias({
+  adminPassword,
+  query,
+  category,
+  suggestedAlias,
+  canonicalSlug,
+  notes,
+  sampleChunkIds
+}: {
+  adminPassword: string;
+  query: string;
+  category: string;
+  suggestedAlias: string;
+  canonicalSlug?: string;
+  notes?: string;
+  sampleChunkIds?: string[];
+}): Promise<AdminAliasSuggestionResponse> {
+  ensureApiConfigured();
+  const response = await fetch(`${API_BASE_URL}/admin/alias-suggestion`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(adminPassword ? { "X-Admin-Password": adminPassword } : {})
+    },
+    body: JSON.stringify({
+      query,
+      category,
+      suggested_alias: suggestedAlias,
+      canonical_slug: canonicalSlug || null,
+      notes: notes || null,
+      sample_chunk_ids: sampleChunkIds || []
+    })
+  });
+  if (!response.ok) {
+    const detail = await readError(response);
+    throw new Error(detail || `Alias suggestion failed with status ${response.status}`);
   }
   return response.json();
 }
