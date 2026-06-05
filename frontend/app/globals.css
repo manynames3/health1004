@@ -1068,6 +1068,17 @@ code {
   border-radius: 8px;
 }
 
+.site-footer {
+  width: min(1180px, calc(100vw - 40px));
+  margin: 0 auto;
+  padding: 28px 0 34px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 .archive-header nav {
   display: flex;
   flex-wrap: wrap;
@@ -1582,6 +1593,10 @@ code {
   .archive-disclaimer,
   .admin-access-panel,
   .home-card-grid {
+    width: min(100vw - 28px, 680px);
+  }
+
+  .site-footer {
     width: min(100vw - 28px, 680px);
   }
 
