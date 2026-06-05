@@ -9,6 +9,7 @@ import {
   SearchCheck,
   ShieldCheck
 } from "lucide-react";
+import { AdminIngestPanel } from "./AdminIngestPanel";
 import { DocumentBrowser } from "./DocumentBrowser";
 import { QueryWorkspace } from "./QueryWorkspace";
 
@@ -61,6 +62,7 @@ export function LandingPage() {
             <a href="#topics">Topics</a>
             <a href="#workflow">Workflow</a>
             <a href="#workspace">Workspace</a>
+            <a href="#admin">Admin</a>
           </div>
         </nav>
 
@@ -175,6 +177,10 @@ export function LandingPage() {
           <QueryWorkspace />
           <DocumentBrowser />
         </div>
+      </section>
+
+      <section className="landing-section admin-section" id="admin" aria-labelledby="admin-title">
+        <AdminIngestPanel />
       </section>
     </main>
   );

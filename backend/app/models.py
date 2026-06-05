@@ -81,6 +81,30 @@ class DocumentListResponse(BaseModel):
     documents: list[DocumentSummary]
 
 
+class AdminStatusResponse(BaseModel):
+    admin_configured: bool
+    aws_region_configured: bool
+    s3_configured: bool
+    s3_bucket: Optional[str] = None
+    metadata_key: str
+    vector_bundle_key: str
+    upload_limit_bytes: int
+
+
+class AdminIngestResponse(BaseModel):
+    status: Literal["completed"]
+    run_id: str
+    total_pdfs: int
+    successful_pdfs: int
+    failed_pdfs: int
+    skipped_pdfs: int
+    pages_processed: int
+    chunks_created: int
+    vector_bundle: dict[str, Any] = Field(default_factory=dict)
+    files: list[dict[str, Any]] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     aws_region_configured: bool

@@ -57,3 +57,41 @@ export interface DocumentSummary {
   pdf_url?: string | null;
   checksum?: string | null;
 }
+
+export interface AdminStatus {
+  admin_configured: boolean;
+  aws_region_configured: boolean;
+  s3_configured: boolean;
+  s3_bucket?: string | null;
+  metadata_key: string;
+  vector_bundle_key: string;
+  upload_limit_bytes: number;
+}
+
+export interface AdminIngestResponse {
+  status: "completed";
+  run_id: string;
+  total_pdfs: number;
+  successful_pdfs: number;
+  failed_pdfs: number;
+  skipped_pdfs: number;
+  pages_processed: number;
+  chunks_created: number;
+  vector_bundle: {
+    s3_key?: string;
+    record_count?: number;
+    bytes_gzipped?: number;
+  };
+  files: Array<{
+    filename: string;
+    document_id?: string;
+    status: string;
+    reason?: string;
+    page_count?: number;
+    chunk_count?: number;
+    vector_records?: number;
+    extraction_method?: string;
+    error?: string;
+  }>;
+  errors: Array<{ filename: string; status: string; error: string }>;
+}

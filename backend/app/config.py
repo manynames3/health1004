@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     presigned_url_ttl_seconds: int = Field(default=3600, alias="PRESIGNED_URL_TTL_SECONDS")
 
     request_body_limit_bytes: int = Field(default=16_384, alias="REQUEST_BODY_LIMIT_BYTES")
+    admin_upload_limit_bytes: int = Field(default=100 * 1024 * 1024, alias="ADMIN_UPLOAD_LIMIT_BYTES")
+    admin_token: str = Field(default="", alias="ADMIN_TOKEN")
     rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
@@ -51,6 +53,10 @@ class Settings(BaseSettings):
     def require_chat_model(self) -> None:
         if not self.bedrock_chat_model_id:
             raise RuntimeError("Missing required setting: BEDROCK_CHAT_MODEL_ID")
+
+    def require_admin_token(self) -> None:
+        if not self.admin_token:
+            raise RuntimeError("Missing required setting: ADMIN_TOKEN")
 
     @property
     def cors_origins_list(self) -> list[str]:

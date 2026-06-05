@@ -5,8 +5,8 @@ Production-style RAG website for a one-time, manually ingested corpus of 572 wee
 ## What It Builds
 
 - Next.js static frontend with Korean-first search/chat UI, citations, retrieved passages, document browser, date/title filtering, and PDF links.
-- FastAPI backend with `/query`, `/documents`, `/documents/{document_id}`, and `/health`.
-- Manual ingestion CLI for local PDFs with embedded-text extraction, Korean OCR fallback, chunking, Bedrock embeddings, S3 artifacts, a compressed S3 vector bundle, checksums, and ingestion reports.
+- FastAPI backend with `/query`, `/documents`, `/documents/{document_id}`, `/admin/status`, `/admin/ingest`, and `/health`.
+- Manual and admin ingestion for PDFs with embedded-text extraction, Korean OCR fallback, chunking, Bedrock embeddings, S3 artifacts, a compressed S3 vector bundle, checksums, and ingestion reports.
 - Low-cost Terraform for a private S3 corpus bucket and attachable IAM policies. It intentionally does not provision OpenSearch, App Runner, ECR, CloudFront, or always-on compute.
 
 The corpus is ingested manually. There are no crawlers, schedulers, or recurring ingestion jobs.
@@ -41,6 +41,7 @@ S3_BUCKET=<terraform corpus bucket>
 VECTOR_BUNDLE_KEY=vector-index/chunks.json.gz
 VECTOR_DIMENSION=1024
 BEDROCK_CHAT_MODEL_ID=<your Bedrock chat model id>
+ADMIN_TOKEN=<strong shared secret for admin uploads>
 ```
 
 The default embedding model is `cohere.embed-multilingual-v3`. Keep `VECTOR_DIMENSION=1024` for that model unless you change embedding models and rebuild the vector bundle.
@@ -86,6 +87,17 @@ python scripts/ingest.py --pdf-dir ./pdfs --report-path ./ingestion_report.json
 ```
 
 The CLI skips files whose checksum already exists in `metadata/documents.json` unless `--force` is passed.
+
+## Admin Uploads
+
+Set `ADMIN_TOKEN` on the FastAPI backend, then open the Admin section in the frontend. The admin form sends the token as `X-Admin-Token`, uploads one or more PDFs to `/admin/ingest`, and runs the same ingestion pipeline as the CLI.
+
+Admin API endpoints:
+
+- `GET /admin/status` verifies the admin token and returns S3/vector configuration.
+- `POST /admin/ingest` accepts multipart PDF uploads, uploads raw PDFs to S3, writes extracted artifacts, refreshes `metadata/documents.json`, rebuilds `vector-index/chunks.json.gz`, and returns the ingestion report summary.
+
+For AWS-hosted backends, the runtime role needs the Terraform `runtime_policy_arn`, which includes S3 write access for admin ingestion.
 
 Artifacts written to S3:
 

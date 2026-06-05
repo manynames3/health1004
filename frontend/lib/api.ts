@@ -1,4 +1,4 @@
-import { DocumentSummary, QueryResponse } from "../types";
+import { AdminIngestResponse, AdminStatus, DocumentSummary, QueryResponse } from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -25,6 +25,54 @@ export async function fetchDocuments(): Promise<DocumentSummary[]> {
   }
   const payload = await response.json();
   return payload.documents || [];
+}
+
+export async function fetchAdminStatus(adminToken: string): Promise<AdminStatus> {
+  ensureApiConfigured();
+  const response = await fetch(`${API_BASE_URL}/admin/status`, {
+    headers: adminHeaders(adminToken),
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    const detail = await readError(response);
+    throw new Error(detail || `Admin status failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function ingestAdminFiles({
+  adminToken,
+  files,
+  force,
+  s3Prefix
+}: {
+  adminToken: string;
+  files: File[];
+  force: boolean;
+  s3Prefix: string;
+}): Promise<AdminIngestResponse> {
+  ensureApiConfigured();
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  form.append("force", String(force));
+  form.append("s3_prefix", s3Prefix);
+
+  const response = await fetch(`${API_BASE_URL}/admin/ingest`, {
+    method: "POST",
+    headers: adminHeaders(adminToken),
+    body: form
+  });
+  if (!response.ok) {
+    const detail = await readError(response);
+    throw new Error(detail || `Admin ingestion failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+function adminHeaders(adminToken: string): HeadersInit {
+  return {
+    "X-Admin-Token": adminToken
+  };
 }
 
 function ensureApiConfigured(): void {
