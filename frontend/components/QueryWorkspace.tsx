@@ -41,7 +41,7 @@ export function QueryWorkspace() {
         <div className="query-heading">
           <div>
             <p className="eyebrow">검색 / 질문</p>
-            <h1>한국어 PDF 근거 검색</h1>
+            <h2>한국어 PDF 근거 검색</h2>
           </div>
           <div className="model-note">
             <ShieldCheck size={16} aria-hidden="true" />
