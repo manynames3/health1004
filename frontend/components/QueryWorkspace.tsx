@@ -13,7 +13,7 @@ const EXAMPLE_QUESTIONS = [
 
 export function QueryWorkspace() {
   const [question, setQuestion] = useState("");
-  const [topK, setTopK] = useState(8);
+  const [topK, setTopK] = useState(6);
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -68,7 +68,7 @@ export function QueryWorkspace() {
           <label>
             참고할 원문
             <select value={topK} onChange={(event) => setTopK(Number(event.target.value))}>
-              {[4, 6, 8, 10, 12, 16].map((value) => (
+              {[4, 6, 8].map((value) => (
                 <option value={value} key={value}>
                   최대 {value}개
                 </option>
