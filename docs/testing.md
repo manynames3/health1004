@@ -21,6 +21,8 @@ Current test areas include:
 - topic page API response
 - hybrid retrieval filter construction
 - RAG response schema
+- Titan embedding request shape
+- primary-to-fallback answer model behavior
 - admin authentication and ingestion boundaries
 - extraction fallback decisions
 - vector bundle retrieval behavior
@@ -68,6 +70,8 @@ The script prints:
 - citation status
 
 This is a qualitative retrieval sanity check, not an automated clinical or factual benchmark.
+
+When evaluating after an embedding model change, confirm the active vector bundle metadata reports the intended `embedding_model_id` and `embedding_dimension`. Query-time embedding follows the bundle metadata, so evaluation can continue to use an older bundle until a full re-embedding run replaces it.
 
 ## CI
 

@@ -56,6 +56,8 @@ If the backend is hosted on AWS or another runtime, add metrics for:
 - request count and error rate by route
 - p95 query latency
 - Bedrock embedding and answer failures
+- answer fallback usage
+- active vector bundle `embedding_model_id` and `embedding_dimension`
 - S3 vector bundle load failures
 - citation-empty responses
 - no-result topic queries
@@ -66,6 +68,8 @@ If the backend is hosted on AWS or another runtime, add metrics for:
 
 - API 5xx rate above threshold
 - Bedrock failure spike
+- unexpected answer fallback spike
+- active vector bundle using an unintended embedding model after migration
 - ingestion job failed
 - vector bundle missing or unreadable
 - admin upload rejected due to size or auth repeatedly

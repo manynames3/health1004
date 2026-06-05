@@ -45,7 +45,7 @@ At a high level:
 1. A manual ingestion job uploads raw PDFs to private S3.
 2. Text is extracted page-by-page with Korean OCR fallback only when needed.
 3. Chunks keep page spans so citations remain page-accurate.
-4. Bedrock creates multilingual embeddings.
+4. Bedrock creates Titan Text Embeddings V2 vectors.
 5. A compressed S3 vector bundle is the default low-cost retrieval store.
 6. SQLAlchemy/Alembic adds structured taxonomy and review tables for local or hosted Postgres.
 7. Optional OpenSearch reindexing supports metadata filters and Korean Nori analysis when an endpoint exists.
@@ -61,6 +61,21 @@ At a high level:
 - Ingestion: PyMuPDF, optional PaddleOCR, optional Tesseract Korean OCR
 - Infrastructure: Terraform for private S3 bucket and attachable IAM policies
 - Local development: Docker Compose Postgres
+
+## Bedrock Model Profile
+
+The default model profile is:
+
+| Purpose | Model |
+| --- | --- |
+| Primary answer generation | `anthropic.claude-haiku-4-5-20251001-v1:0` |
+| Fallback answer generation | `amazon.nova-2-lite-v1:0` |
+| Embeddings | `amazon.titan-embed-text-v2:0` |
+| Reranking | disabled with `ENABLE_RERANK=false` |
+
+This keeps answer quality high while removing Cohere from the default retrieval path. Changing answer models only requires an env/IAM update and backend restart. Changing the embedding model requires a full vector rebuild because stored passage vectors and query vectors must use the same model and dimension.
+
+See [docs/model-strategy.md](docs/model-strategy.md) for the full rationale and migration steps.
 
 ## Local Quickstart
 
@@ -219,6 +234,7 @@ Detailed operational docs:
 
 - [docs/deployment.md](docs/deployment.md)
 - [docs/runbook.md](docs/runbook.md)
+- [docs/model-strategy.md](docs/model-strategy.md)
 - [docs/security.md](docs/security.md)
 - [docs/observability.md](docs/observability.md)
 - [docs/cost-model.md](docs/cost-model.md)

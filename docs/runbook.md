@@ -54,6 +54,31 @@ python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/ --report-path ./
 4. Review `ingestion_report.json` for failed files, low-text pages, OCR fallback, and suspicious extraction flags.
 5. Re-run only when needed with `--force`.
 
+Default model settings:
+
+```bash
+BEDROCK_CHAT_MODEL_ID=anthropic.claude-haiku-4-5-20251001-v1:0
+BEDROCK_FALLBACK_CHAT_MODEL_ID=amazon.nova-2-lite-v1:0
+BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v2:0
+VECTOR_DIMENSION=1024
+ENABLE_RERANK=false
+```
+
+## Model Changes And Re-Embedding
+
+Changing `BEDROCK_CHAT_MODEL_ID` or `BEDROCK_FALLBACK_CHAT_MODEL_ID` does not require re-ingestion. Update env, confirm IAM access, restart or redeploy the backend, and run retrieval evaluation.
+
+Changing `BEDROCK_EMBED_MODEL_ID` or `VECTOR_DIMENSION` requires rebuilding the vector bundle:
+
+```bash
+python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/ --force --report-path outputs/ingestion_reembed.json
+python scripts/tag_passages.py --source existing --force --report outputs/taxonomy_report.json
+python scripts/reindex_with_taxonomy.py --rebuild
+python scripts/evaluate_taxonomy_retrieval.py
+```
+
+The backend reads `embedding_model_id` and `embedding_dimension` from the active vector bundle and embeds queries with those recorded values. This prevents silently mixing old and new embedding spaces while a rebuild is in progress.
+
 ## Taxonomy Update
 
 1. Edit `data/taxonomy.seed.yaml`.
@@ -111,6 +136,7 @@ Review low-confidence tags at `/admin/review`. Set `ADMIN_PASSWORD` for non-loca
 | --- | --- | --- |
 | `/health` says S3 not configured | Missing `S3_BUCKET` | Update `.env` and restart API |
 | Bedrock embedding fails | Region, model access, or IAM issue | Confirm Bedrock model access and IAM permissions |
+| Retrieval quality drops after model change | Vector bundle was not rebuilt or active bundle still uses old embeddings | Re-run full ingestion with `--force`, then tag, reindex, and evaluate |
 | PDFs ingest with little text | Scanned pages or poor OCR | Install Tesseract Korean or PaddleOCR, rerun with `--force` |
 | Topic pages show little data | Chunks not tagged or taxonomy artifact stale | Run build taxonomy and tag scripts |
 | OpenSearch reindex only writes local files | `OPENSEARCH_ENDPOINT` is unset | This is expected for low-cost/default mode |

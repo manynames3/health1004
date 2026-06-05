@@ -71,3 +71,18 @@ Consequences:
 - Static hosting is simple and low maintenance.
 - The public site can be reviewed without exposing backend secrets.
 - API-backed features require `NEXT_PUBLIC_API_BASE_URL` and a configured backend deployment.
+
+## ADR 006: Claude Answers, Titan Embeddings, No Reranker By Default
+
+Status: Accepted
+
+Context: The archive needs high-quality Korean source-grounded answers, but low-maintenance retrieval. Cohere Command R is not part of the long-term model plan, and adding a reranker creates another cost and lifecycle dependency.
+
+Decision: Use `anthropic.claude-haiku-4-5-20251001-v1:0` for primary answer generation, `amazon.nova-2-lite-v1:0` as fallback answer model, `amazon.titan-embed-text-v2:0` for embeddings, and `ENABLE_RERANK=false` by default.
+
+Consequences:
+
+- User-visible answer quality is prioritized without keeping Cohere in the default retrieval path.
+- Answer model changes are operationally simple.
+- Embedding model changes require full vector rebuilds.
+- Reranking remains an optional future optimization, not a default cost.

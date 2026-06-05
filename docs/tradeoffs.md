@@ -51,6 +51,37 @@ Cost:
 - Operators must provide and secure their own endpoint.
 - Local development usually uses mapping-plan output instead of a live cluster.
 
+## No Reranker By Default
+
+Decision: keep `ENABLE_RERANK=false` and rely on taxonomy filters, Korean aliases, keyword scoring, and vector similarity.
+
+Why:
+
+- Avoids another model lifecycle dependency.
+- Avoids another per-query Bedrock charge.
+- Keeps the low-volume archive simpler to operate.
+- Korean retrieval quality should first be improved through taxonomy and aliases.
+
+Cost:
+
+- Some ambiguous queries may rank less cleanly than with a strong reranker.
+- A future evaluation may justify adding a reranker for answer-heavy usage.
+
+## Claude Answers With AWS-Owned Embeddings
+
+Decision: use Claude Haiku 4.5 for answer quality, Nova 2 Lite as answer fallback, and Titan Text Embeddings V2 for retrieval vectors.
+
+Why:
+
+- Readers feel answer quality through Korean phrasing, source-grounded caution, and citation discipline.
+- Titan embeddings remove the default Cohere retrieval dependency.
+- Answer-model changes are low risk compared with embedding-model changes.
+
+Cost:
+
+- The answer path still depends on a third-party Bedrock provider for the primary model.
+- If the embedding model changes, all vectors must be rebuilt.
+
 ## Manual Ingestion
 
 Decision: ingest PDFs manually through scripts or an admin upload path.

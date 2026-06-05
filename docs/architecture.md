@@ -22,7 +22,7 @@ flowchart TB
 
     subgraph AWS["AWS account"]
         S3["Private S3 corpus bucket\nPDFs, extracted text, reports,\nvector bundles"]
-        Bedrock["Amazon Bedrock Runtime\nembeddings and chat"]
+        Bedrock["Amazon Bedrock Runtime\nTitan embeddings\nHaiku/Nova answers"]
         OpenSearch["Optional existing OpenSearch endpoint\nmetadata filters and Nori analyzer"]
     end
 
@@ -58,7 +58,9 @@ sequenceDiagram
     UI->>API: POST /query
     API->>Tax: Normalize Korean query and match aliases
     Tax-->>API: Canonical topics, aliases, filters
-    API->>BR: Embed query with search_query input type
+    API->>Store: Load active vector bundle metadata
+    Store-->>API: embedding model and dimension
+    API->>BR: Embed query with bundle-matched embedding model
     API->>Store: Search tagged passages first
     Store-->>API: Retrieved chunks with page spans
     API->>Store: Broader hybrid fallback if needed
@@ -67,6 +69,17 @@ sequenceDiagram
 ```
 
 The answer path is grounded by design. If retrieval returns weak or empty context, the API should not ask the model to invent an answer.
+
+## Bedrock Model Boundary
+
+The default model profile is documented in [model-strategy.md](model-strategy.md):
+
+- primary answer model: `anthropic.claude-haiku-4-5-20251001-v1:0`
+- fallback answer model: `amazon.nova-2-lite-v1:0`
+- embedding model: `amazon.titan-embed-text-v2:0`
+- reranking disabled by default
+
+Answer models can be changed independently of the vector bundle. Embedding model changes require rebuilding vectors because stored passage vectors and query vectors must share the same embedding model and dimension.
 
 ## Ingestion Flow
 
@@ -79,7 +92,7 @@ flowchart LR
     OCR -- yes --> Pages["Page JSON and Markdown"]
     OCRFallback --> Pages
     Pages --> Chunk["Korean-aware chunking\npage spans preserved"]
-    Chunk --> Embed["Bedrock multilingual embeddings"]
+    Chunk --> Embed["Titan Text Embeddings V2"]
     Embed --> Bundle["chunks.json.gz\nS3 vector bundle"]
     Chunk --> Taxonomy["Deterministic alias tagging"]
     Taxonomy --> Report["ingestion_report.json\ntaxonomy_report.json"]

@@ -26,6 +26,17 @@ The default design is for a low-volume, low-maintenance archive. It avoids expen
 
 The application includes OpenSearch mapping and reindex support, but Terraform does not create an OpenSearch domain. For a small archive, S3 vector bundles, taxonomy filtering, and Lambda on-demand API execution are the cheaper default.
 
+## Default Bedrock Cost Profile
+
+Default model settings:
+
+- answer generation: `anthropic.claude-haiku-4-5-20251001-v1:0`
+- fallback answer generation: `amazon.nova-2-lite-v1:0`
+- embeddings: `amazon.titan-embed-text-v2:0`
+- reranking: disabled
+
+The fallback answer model should be rarely used; it is only called when the primary answer model fails. Reranking is disabled so each query avoids an extra model call. Ingestion is the largest embedding event because every passage is embedded; normal user queries embed only the question and then generate an answer when source chunks are found.
+
 ## Cost Controls
 
 - Run ingestion manually instead of on a schedule.
@@ -35,6 +46,8 @@ The application includes OpenSearch mapping and reindex support, but Terraform d
 - Use short signed URL TTLs.
 - Prefer on-demand API hosting if the backend is deployed.
 - Keep evaluation scripts manual so they do not create surprise model-call costs.
+- Keep `ENABLE_RERANK=false` until evaluation proves a reranker is worth the extra per-query call.
+- Avoid changing embedding models casually, because a full corpus re-embedding creates a one-time Bedrock cost.
 
 ## When To Add More Infrastructure
 

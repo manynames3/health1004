@@ -18,6 +18,8 @@ Important values:
 - `ADMIN_PASSWORD`
 - `OPENSEARCH_ENDPOINT`, if used
 
+Model ids are configuration, not secrets. They still need to be kept consistent with IAM and deployment docs so the runtime can invoke only the intended Bedrock models.
+
 Do not commit `.env`, `.env.local`, Terraform state, local PDFs, generated reports with corpus-sensitive metadata, or AWS credentials.
 
 ## IAM
@@ -27,7 +29,7 @@ Terraform creates attachable policies rather than broad users or roles:
 - `ingestion_policy_arn` for the principal that runs manual ingestion
 - `runtime_policy_arn` for an optional AWS-hosted backend runtime
 
-The default infrastructure is intentionally narrow: S3 access for corpus artifacts and Bedrock model calls. OpenSearch permissions are not created by default because OpenSearch is not provisioned by default.
+The default infrastructure is intentionally narrow: S3 access for corpus artifacts and Bedrock model calls. Runtime IAM includes the configured embedding model, primary answer model, fallback answer model, and Bedrock inference profiles. OpenSearch permissions are not created by default because OpenSearch is not provisioned by default.
 
 ## S3 Data
 

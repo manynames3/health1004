@@ -71,6 +71,22 @@ The repo does not prescribe a single hosted backend. Valid low-volume options in
 - a small on-demand container runtime
 - another private runtime reachable by the static frontend
 
+## Bedrock Model Configuration
+
+The default model profile is:
+
+```bash
+BEDROCK_CHAT_MODEL_ID=anthropic.claude-haiku-4-5-20251001-v1:0
+BEDROCK_FALLBACK_CHAT_MODEL_ID=amazon.nova-2-lite-v1:0
+BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v2:0
+VECTOR_DIMENSION=1024
+ENABLE_RERANK=false
+```
+
+`BEDROCK_CHAT_MODEL_ID` is the primary answer model. `BEDROCK_FALLBACK_CHAT_MODEL_ID` is tried only if the primary Bedrock Converse call fails.
+
+Changing answer models requires a backend restart or redeploy and matching IAM permissions. Changing `BEDROCK_EMBED_MODEL_ID` requires a full embedding rebuild because the vector bundle must be generated with the same model used for query embeddings. See [model-strategy.md](model-strategy.md).
+
 Any hosted backend needs:
 
 - `AWS_REGION`

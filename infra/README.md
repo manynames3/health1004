@@ -17,6 +17,16 @@ Optional API resources when `deploy_api=true`:
 
 It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend stays on Cloudflare Pages. OpenSearch scripts target an existing endpoint only when `OPENSEARCH_ENDPOINT` is configured.
 
+## Bedrock Model Defaults
+
+Terraform defaults match the app's low-cost model strategy:
+
+- primary answer model: `anthropic.claude-haiku-4-5-20251001-v1:0`
+- fallback answer model: `amazon.nova-2-lite-v1:0`
+- embedding model: `amazon.titan-embed-text-v2:0`
+
+Runtime IAM grants access to the primary answer model, fallback answer model, embedding model, and Bedrock inference profiles. Changing the embedding model requires rebuilding the S3 vector bundle after deployment.
+
 ## Apply Storage Only
 
 ```bash

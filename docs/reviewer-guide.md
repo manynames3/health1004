@@ -16,6 +16,7 @@ The corpus is a set of Korean natural-health newsletters. A plain PDF chatbot is
 - `docs/architecture.md` for the system diagram and data flows
 - `backend/app/taxonomy.py` for Korean normalization, alias matching, and query resolution
 - `backend/app/rag.py` and `backend/app/vector_bundle.py` for retrieval and answer generation
+- `docs/model-strategy.md` for the Bedrock model profile and embedding migration rules
 - `backend/app/ingestion.py` and `scripts/ingest.py` for manual ingestion
 - `data/taxonomy.seed.yaml` for controlled Korean taxonomy
 - `backend/tests/` for behavior-level tests
@@ -70,3 +71,4 @@ It prints resolved topics, filters, retrieved passages, source documents/pages, 
 - Taxonomy tags are deterministic first, with optional LLM help only as a secondary path.
 - Manual review is built into the data model through confidence scores and review flags.
 - Teardown, cost, security, testing, and operational gaps are documented explicitly.
+- Model lifecycle risk is handled by separating answer-model fallback from embedding-vector rebuilds.
