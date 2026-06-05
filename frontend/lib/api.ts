@@ -11,7 +11,8 @@ import {
   TopicListResponse
 } from "../types";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
+const DEPLOYED_API_BASE_URL = "https://aehcnrpvn6k72yujza47cam43a0jervq.lambda-url.us-east-1.on.aws";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || DEPLOYED_API_BASE_URL).replace(/\/+$/, "");
 
 export async function askQuestion(question: string, topK: number): Promise<QueryResponse> {
   ensureApiConfigured();
@@ -199,7 +200,7 @@ function adminHeaders(adminToken: string): HeadersInit {
 }
 
 function ensureApiConfigured(): void {
-  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  if (!API_BASE_URL) {
     throw new Error("API endpoint is not configured. Set NEXT_PUBLIC_API_BASE_URL to the deployed FastAPI backend URL.");
   }
 }
