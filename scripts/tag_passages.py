@@ -20,6 +20,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Tag existing Health1004 chunks with the controlled Korean taxonomy.")
     parser.add_argument("--source", choices=["existing", "local"], default="existing")
     parser.add_argument("--input", help="Local vector bundle path when --source local is used")
+    parser.add_argument(
+        "--bundle-key",
+        default=None,
+        help="S3 vector bundle key to load when --source existing is used. Defaults to taxonomy bundle, then raw bundle.",
+    )
     parser.add_argument("--seed", default=None, help="Taxonomy seed path. Defaults to TAXONOMY_SEED_PATH.")
     parser.add_argument("--report", default="outputs/taxonomy_report.json")
     parser.add_argument("--output", default="outputs/chunks.taxonomy.json.gz")
@@ -90,6 +95,11 @@ def load_bundle_payload(args: argparse.Namespace, settings) -> bytes:
             raise SystemExit("--input is required when --source local")
         return Path(args.input).expanduser().read_bytes()
     storage = S3Storage(settings)
+    if args.bundle_key:
+        payload = storage.get_bytes(args.bundle_key)
+        if payload is None:
+            raise SystemExit(f"No vector bundle found at s3://{settings.s3_bucket}/{args.bundle_key}")
+        return payload
     payload = storage.get_bytes(settings.taxonomy_vector_bundle_key)
     if payload is None:
         payload = storage.get_bytes(settings.vector_bundle_key)

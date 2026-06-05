@@ -181,6 +181,15 @@ python scripts/tag_passages.py --source existing --report outputs/taxonomy_repor
 python scripts/tag_passages.py --source existing --force --report outputs/taxonomy_report.json
 ```
 
+After appending a new PDF folder, tag from the freshly updated raw vector bundle so the taxonomy bundle includes both old and new documents:
+
+```bash
+python scripts/tag_passages.py \
+  --source existing \
+  --bundle-key vector-index/chunks.json.gz \
+  --report outputs/taxonomy_report.json
+```
+
 Rebuild taxonomy-aware OpenSearch artifacts, or reindex a configured endpoint:
 
 ```bash
