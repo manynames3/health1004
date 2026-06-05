@@ -1182,7 +1182,7 @@ code {
   scrollbar-width: none;
   white-space: nowrap;
   color: var(--muted);
-  font-size: 1.3rem;
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
   font-weight: 900;
 }
 
@@ -1990,14 +1990,22 @@ code {
   }
 
   .archive-header {
-    align-items: flex-start;
+    align-items: center;
     flex-direction: column;
+    gap: 14px;
+  }
+
+  .archive-brand {
+    justify-content: center;
+    width: 100%;
   }
 
   .archive-header nav {
-    gap: 10px;
-    justify-content: flex-start;
+    gap: clamp(2px, 1.1vw, 6px);
+    justify-content: space-between;
     width: 100%;
+    overflow-x: visible;
+    font-size: clamp(0.82rem, 3.6vw, 0.95rem);
   }
 
   .hero-content {
