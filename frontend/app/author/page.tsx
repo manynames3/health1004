@@ -3,12 +3,12 @@ import { PageShell } from "../../components/SiteChrome";
 export default function AuthorPage() {
   return (
     <PageShell
-      eyebrow="ABOUT"
+      eyebrow="기록을 남긴 사람"
       title="About 건강1004"
       subtitle="15년 동안의 정성으로 만들어 지인들에게 나눈 이메일들을 모아 만든 지식서재입니다."
     >
       <section className="author-archive-note">
-        <p className="eyebrow">건강1004 지식서재</p>
+        <p className="eyebrow">15년의 기록</p>
         <h2>원문과 마음을 함께 보존하는 건강 아카이브</h2>
         <p>
           건강1004는 오랜 시간 꾸준히 나눈 건강 글과 원문 자료를 한곳에 모아, 증상과 음식, 질환,

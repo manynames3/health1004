@@ -90,7 +90,7 @@ export function AdminIngestPanel() {
   return (
     <section className="admin-panel" aria-labelledby="admin-title">
       <div className="admin-copy">
-        <p className="eyebrow">ADMIN</p>
+        <p className="eyebrow">처리 흐름</p>
         <h2 id="admin-title">PDF를 AWS에 업로드</h2>
         <p>
           한국어 PDF를 S3에 저장하고, 원문 조각과 문서 목록을 같은 처리 흐름으로 갱신합니다.

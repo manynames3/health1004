@@ -36,7 +36,7 @@ export function DocumentDetailClient({ documentId }: { documentId: string }) {
 
   return (
     <section className="document-detail-card">
-      <p className="eyebrow">원문 PDF</p>
+      <p className="eyebrow">출처 정보</p>
       <h2>{document.title}</h2>
       <dl>
         <div>

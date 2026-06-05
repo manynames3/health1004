@@ -15,7 +15,7 @@ export function AdminDashboard() {
 
       <div className="admin-dashboard-section" id="tag-review">
         <div className="admin-section-heading">
-          <p className="eyebrow">ADMIN</p>
+          <p className="eyebrow">검토 대기</p>
           <h2>태그 검토</h2>
           <p>자동 태깅 신뢰도가 낮은 원문 조각을 검토합니다.</p>
         </div>
