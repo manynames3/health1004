@@ -1,14 +1,10 @@
-import { AdminReviewPanel } from "../../../components/AdminReviewPanel";
+import { AdminDashboard } from "../../../components/AdminDashboard";
 import { PageShell } from "../../../components/SiteChrome";
 
 export default function AdminReviewPage() {
   return (
-    <PageShell
-      eyebrow="ADMIN"
-      title="Low-confidence tagging review"
-      subtitle="자동 태깅 신뢰도가 낮은 원문 조각을 검토합니다."
-    >
-      <AdminReviewPanel />
+    <PageShell eyebrow="ADMIN" title="관리자" subtitle="PDF 업로드와 태그 검토를 한 곳에서 관리합니다.">
+      <AdminDashboard />
     </PageShell>
   );
 }
