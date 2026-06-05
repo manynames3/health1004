@@ -1354,29 +1354,14 @@ code {
   line-height: 0.98;
 }
 
-.author-lede {
-  max-width: 860px;
-  margin-bottom: 18px;
-  color: var(--muted);
-  font-size: 1.14rem;
-  font-weight: 850;
-}
-
-.author-bio-copy h2 {
-  margin-top: 34px;
-  margin-bottom: 2px;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  font-weight: 950;
-}
-
-.author-role {
-  margin-bottom: 18px;
+.author-subheader {
+  margin-bottom: 24px;
   color: var(--accent-dark);
-  font-size: 1.08rem;
+  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
   font-weight: 950;
 }
 
-.author-bio-copy p:not(.eyebrow, .author-role, .author-lede) {
+.author-bio-copy p:not(.eyebrow, .author-subheader) {
   max-width: 840px;
   color: var(--muted);
   font-size: 1.02rem;
