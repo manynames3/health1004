@@ -24,6 +24,7 @@ def citation_from_chunk(chunk: RetrievedChunk, pdf_url: str | None = None) -> Ci
         section_title=chunk.section_title,
         quote=combined_page_quote(page_quotes) if page_quotes else excerpt(chunk.text),
         pdf_url=pdf_url,
+        source_page_image_s3_key=chunk.source_page_image_s3_key,
     )
 
 

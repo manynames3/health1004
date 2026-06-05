@@ -13,6 +13,10 @@ export interface Citation {
   section_title?: string | null;
   quote: string;
   pdf_url?: string | null;
+  series?: string | null;
+  volume?: string | null;
+  lesson_number?: string | null;
+  source_page_image_s3_key?: string | null;
 }
 
 export interface RetrievedChunk {
@@ -29,10 +33,45 @@ export interface RetrievedChunk {
   language: LanguageCode;
   text: string;
   score: number;
+  article_id?: string | null;
   source_s3_key?: string | null;
   pdf_s3_key?: string | null;
+  source_pdf_s3_key?: string | null;
+  source_text_s3_key?: string | null;
+  source_page_image_s3_key?: string | null;
   extraction_method?: string | null;
   token_count?: number | null;
+  original_korean_text?: string | null;
+  english_summary_optional?: string | null;
+  body_system_tags: string[];
+  symptom_tags: string[];
+  condition_tags: string[];
+  food_tags: string[];
+  substance_tags: string[];
+  habit_tags: string[];
+  body_system_slugs: string[];
+  symptom_slugs: string[];
+  condition_slugs: string[];
+  food_slugs: string[];
+  substance_slugs: string[];
+  habit_slugs: string[];
+  avoid_tags: string[];
+  recommended_food_tags: string[];
+  topic_slugs: string[];
+  confidence_score?: number | null;
+  needs_human_review: boolean;
+  embedding_id?: string | null;
+}
+
+export interface ResolvedQuery {
+  original_query: string;
+  detected_language: LanguageCode;
+  matched_topics: string[];
+  matched_topic_slugs: string[];
+  matched_body_systems: string[];
+  matched_body_system_slugs: string[];
+  expanded_aliases: string[];
+  retrieval_filters: Record<string, string[]>;
 }
 
 export interface QueryResponse {
@@ -42,6 +81,8 @@ export interface QueryResponse {
   language: LanguageCode;
   warning_notes: string[];
   request_id: string;
+  resolved_query?: ResolvedQuery | null;
+  related_topics: Array<{ slug: string; title: string; category?: string }>;
 }
 
 export interface DocumentSummary {
@@ -53,9 +94,45 @@ export interface DocumentSummary {
   page_count: number;
   chunk_count: number;
   extraction_method?: string | null;
+  series?: string | null;
+  volume?: string | null;
+  lesson_number?: string | null;
   pdf_s3_key?: string | null;
   pdf_url?: string | null;
   checksum?: string | null;
+}
+
+export interface TopicSummary {
+  slug: string;
+  title: string;
+  english_title?: string | null;
+  category: string;
+  aliases: string[];
+  body_system_slugs: string[];
+  related_slugs: string[];
+  source_count: number;
+}
+
+export interface TaxonomyResponse {
+  categories: Record<string, TopicSummary[]>;
+  topic_count: number;
+  alias_count: number;
+}
+
+export interface TopicListResponse {
+  topics: TopicSummary[];
+}
+
+export interface TopicDetail extends TopicSummary {
+  related_topics: TopicSummary[];
+  source_passages: RetrievedChunk[];
+  related_documents: DocumentSummary[];
+  safety_disclaimer: string;
+}
+
+export interface PassageListResponse {
+  passages: RetrievedChunk[];
+  total: number;
 }
 
 export interface AdminStatus {
@@ -94,4 +171,9 @@ export interface AdminIngestResponse {
     error?: string;
   }>;
   errors: Array<{ filename: string; status: string; error: string }>;
+}
+
+export interface AdminReviewTagResponse {
+  status: "updated" | "not_configured";
+  chunk_id: string;
 }

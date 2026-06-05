@@ -24,6 +24,13 @@ export function AdminIngestPanel() {
   }, []);
 
   const totalSize = useMemo(() => files.reduce((sum, file) => sum + file.size, 0), [files]);
+  const hasAdminToken = adminToken.trim().length > 0;
+  const hasFiles = files.length > 0;
+  const ingestDisabledReason = !hasAdminToken
+    ? "Enter ADMIN_TOKEN to enable ingestion."
+    : !hasFiles
+      ? "Select one or more PDF files to ingest."
+      : "";
 
   function onTokenChange(value: string) {
     setAdminToken(value);
@@ -141,11 +148,21 @@ export function AdminIngestPanel() {
         {error && <div className="error-box">{error}</div>}
 
         <div className="admin-actions">
-          <button className="secondary-admin-button" type="button" onClick={onCheckStatus} disabled={loadingStatus || !adminToken.trim()}>
+          {ingestDisabledReason && !uploading && (
+            <p className="admin-action-hint" id="ingest-disabled-reason">
+              {ingestDisabledReason}
+            </p>
+          )}
+          <button className="secondary-admin-button" type="button" onClick={onCheckStatus} disabled={loadingStatus || !hasAdminToken}>
             {loadingStatus ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
             Check status
           </button>
-          <button className="primary-admin-button" type="submit" disabled={uploading || !adminToken.trim() || files.length === 0}>
+          <button
+            className="primary-admin-button"
+            type="submit"
+            disabled={uploading || !hasAdminToken || !hasFiles}
+            aria-describedby={ingestDisabledReason ? "ingest-disabled-reason" : undefined}
+          >
             {uploading ? <Loader2 className="spin" size={18} /> : <UploadCloud size={18} />}
             Ingest files
           </button>

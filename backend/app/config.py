@@ -12,6 +12,14 @@ class Settings(BaseSettings):
     s3_bucket: str = Field(default="", alias="S3_BUCKET")
     vector_bundle_key: str = Field(default="vector-index/chunks.json.gz", alias="VECTOR_BUNDLE_KEY")
     vector_dimension: int = Field(default=1024, alias="VECTOR_DIMENSION")
+    taxonomy_vector_bundle_key: str = Field(
+        default="vector-index/chunks.taxonomy.json.gz", alias="TAXONOMY_VECTOR_BUNDLE_KEY"
+    )
+    taxonomy_report_key: str = Field(
+        default="ingestion-reports/taxonomy_report.json", alias="TAXONOMY_REPORT_KEY"
+    )
+    taxonomy_seed_path: str = Field(default="data/taxonomy.seed.yaml", alias="TAXONOMY_SEED_PATH")
+    database_url: str = Field(default="", alias="DATABASE_URL")
 
     bedrock_embed_model_id: str = Field(
         default="cohere.embed-multilingual-v3", alias="BEDROCK_EMBED_MODEL_ID"
@@ -33,7 +41,14 @@ class Settings(BaseSettings):
     request_body_limit_bytes: int = Field(default=16_384, alias="REQUEST_BODY_LIMIT_BYTES")
     admin_upload_limit_bytes: int = Field(default=100 * 1024 * 1024, alias="ADMIN_UPLOAD_LIMIT_BYTES")
     admin_token: str = Field(default="", alias="ADMIN_TOKEN")
+    admin_password: str = Field(default="", alias="ADMIN_PASSWORD")
     rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
+    enable_llm_tagging: bool = Field(default=False, alias="ENABLE_LLM_TAGGING")
+    enable_nori_analyzer: bool = Field(default=True, alias="ENABLE_NORI_ANALYZER")
+    opensearch_use_hybrid: bool = Field(default=True, alias="OPENSEARCH_USE_HYBRID")
+    opensearch_endpoint: str = Field(default="", alias="OPENSEARCH_ENDPOINT")
+    opensearch_index: str = Field(default="health1004-passages", alias="OPENSEARCH_INDEX")
+    min_tag_confidence: float = Field(default=0.65, alias="MIN_TAG_CONFIDENCE")
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
@@ -57,6 +72,10 @@ class Settings(BaseSettings):
     def require_admin_token(self) -> None:
         if not self.admin_token:
             raise RuntimeError("Missing required setting: ADMIN_TOKEN")
+
+    def require_admin_password(self) -> None:
+        if not self.admin_password:
+            raise RuntimeError("Missing required setting: ADMIN_PASSWORD")
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -1,0 +1,394 @@
+version: 1
+description: "Controlled Korean taxonomy for the Health1004 natural-health PDF archive."
+
+body_systems:
+  - slug: digestive-gut
+    title: 소화/장
+    english_title: Digestive and gut health
+    aliases: [소화, 장, 위, 위장, 장건강, 소화기, digestive, gut]
+  - slug: blood-vessels-metabolism
+    title: 혈액/혈관/대사
+    english_title: Blood, vascular, and metabolism
+    aliases: [혈액, 혈관, 대사, 혈당, 혈압, 혈액순환, metabolic, circulation]
+  - slug: skin-allergy-immunity
+    title: 피부/알레르기/면역
+    english_title: Skin, allergy, and immunity
+    aliases: [피부, 알레르기, 면역, 아토피, 비염, allergy, immunity]
+  - slug: joints-bones-pain
+    title: 관절/뼈/통증
+    english_title: Joints, bones, and pain
+    aliases: [관절, 뼈, 통증, 골격, 골다공증, pain, bone]
+  - slug: women-hormones
+    title: 여성/호르몬
+    english_title: Women and hormones
+    aliases: [여성, 호르몬, 갱년기, 생리, hormone]
+  - slug: cancer-related
+    title: 암 관련
+    english_title: Cancer related
+    aliases: [암, 암예방, 발암, 종양, cancer]
+  - slug: children-family-health
+    title: 어린이/가족 건강
+    english_title: Children and family health
+    aliases: [어린이, 아이, 가족, 자녀, 소아, child, family]
+  - slug: food-additives
+    title: 음식/식품첨가물
+    english_title: Food and additives
+    aliases: [음식, 식품, 먹거리, 첨가물, 식품첨가물, food, additive]
+  - slug: lifestyle-natural-healing
+    title: 생활습관/자연치유
+    english_title: Lifestyle and natural healing
+    aliases: [생활습관, 자연치유, 습관, 운동, 수면, lifestyle, natural healing]
+
+symptoms:
+  - slug: indigestion
+    title: 소화불량
+    body_systems: [digestive-gut]
+    aliases: [소화가 안됨, 소화가 안돼요, 더부룩함, 체함, 속이 안 좋음, indigestion]
+  - slug: heartburn
+    title: 속쓰림
+    body_systems: [digestive-gut]
+    aliases: [속쓰림, 위산, 역류, 가슴쓰림, heartburn, acid reflux]
+  - slug: gastritis
+    title: 위염
+    body_systems: [digestive-gut]
+    aliases: [위장염, 위 점막, 위가 아픔, gastritis]
+  - slug: gastric-ulcer
+    title: 위궤양
+    body_systems: [digestive-gut]
+    aliases: [궤양, 위궤양, 위 상처, gastric ulcer]
+  - slug: constipation
+    title: 변비
+    body_systems: [digestive-gut]
+    aliases: [배변장애, 변이 안 나옴, 장운동, 섬유질, constipation]
+  - slug: diarrhea
+    title: 설사
+    body_systems: [digestive-gut]
+    aliases: [묽은 변, 배탈, 장염, diarrhea]
+  - slug: bowel-disease
+    title: 장질환
+    body_systems: [digestive-gut]
+    aliases: [장 질환, 장 건강, 대장 질환, 장 문제, bowel disease, intestinal disease]
+  - slug: high-blood-pressure
+    title: 고혈압
+    body_systems: [blood-vessels-metabolism]
+    aliases: [혈압, 높은 혈압, 혈관질환, 혈액순환, hypertension]
+  - slug: diabetes
+    title: 당뇨
+    body_systems: [blood-vessels-metabolism]
+    aliases: [당뇨병, 혈당, 인슐린, 대사질환, diabetes]
+  - slug: circulation
+    title: 혈액순환
+    body_systems: [blood-vessels-metabolism]
+    aliases: [순환, 혈관, 혈액 흐름, 말초순환, circulation]
+  - slug: cholesterol
+    title: 콜레스테롤
+    body_systems: [blood-vessels-metabolism]
+    aliases: [지질, 고지혈증, 혈중지질, cholesterol]
+  - slug: asthma
+    title: 천식
+    body_systems: [skin-allergy-immunity]
+    aliases: [기관지천식, 호흡곤란, 숨참, asthma]
+  - slug: allergic-rhinitis
+    title: 알레르기성 비염
+    body_systems: [skin-allergy-immunity]
+    aliases: [비염, 알러지 비염, 코 알레르기, allergic rhinitis]
+  - slug: dermatitis
+    title: 피부염
+    body_systems: [skin-allergy-immunity]
+    aliases: [피부질환, 염증성 피부, 피부 트러블, dermatitis]
+  - slug: atopy
+    title: 아토피
+    body_systems: [skin-allergy-immunity]
+    aliases: [아토피 피부염, 아토피성 피부염, atopic dermatitis, atopy]
+  - slug: arthritis
+    title: 관절염
+    body_systems: [joints-bones-pain]
+    aliases: [관절 통증, 류마티스, 퇴행성 관절, arthritis]
+  - slug: gout
+    title: 통풍
+    body_systems: [joints-bones-pain]
+    aliases: [요산, 발가락 통증, gout]
+  - slug: osteoporosis
+    title: 골다공증
+    body_systems: [joints-bones-pain]
+    aliases: [뼈 약화, 골밀도, 칼슘, osteoporosis]
+  - slug: stones
+    title: 결석
+    body_systems: [digestive-gut]
+    aliases: [담석, 신장결석, 요로결석, stone]
+  - slug: gallstone
+    title: 담석
+    body_systems: [digestive-gut]
+    aliases: [쓸개돌, 담낭결석, gallstone]
+  - slug: low-immunity
+    title: 면역저하
+    body_systems: [skin-allergy-immunity]
+    aliases: [면역력 저하, 면역 약화, 감염, low immunity]
+  - slug: fatigue
+    title: 피로
+    body_systems: [lifestyle-natural-healing]
+    aliases: [만성피로, 무기력, 지침, tiredness, fatigue]
+  - slug: obesity
+    title: 비만
+    body_systems: [blood-vessels-metabolism]
+    aliases: [살찜, 체중, 체지방, 과체중, obesity]
+
+conditions:
+  - slug: colorectal-cancer
+    title: 대장암
+    body_systems: [cancer-related, digestive-gut]
+    aliases: [장암, 대장 질환, 장 건강, colon cancer, colorectal cancer]
+  - slug: breast-cancer
+    title: 유방암
+    body_systems: [cancer-related, women-hormones]
+    aliases: [가슴암, 여성암, breast cancer]
+  - slug: prostate-cancer
+    title: 전립선암
+    body_systems: [cancer-related]
+    aliases: [전립샘암, 남성암, prostate cancer]
+  - slug: lung-cancer
+    title: 폐암
+    body_systems: [cancer-related]
+    aliases: [폐 질환, 흡연암, lung cancer]
+  - slug: stomach-cancer
+    title: 위암
+    body_systems: [cancer-related, digestive-gut]
+    aliases: [위장암, stomach cancer, gastric cancer]
+  - slug: heart-disease
+    title: 심장질환
+    body_systems: [blood-vessels-metabolism]
+    aliases: [심장병, 심혈관질환, 협심증, heart disease]
+  - slug: cerebrovascular-disease
+    title: 뇌혈관질환
+    body_systems: [blood-vessels-metabolism]
+    aliases: [뇌졸중, 중풍, 뇌혈관, stroke, cerebrovascular disease]
+  - slug: diabetes-mellitus
+    title: 당뇨병
+    body_systems: [blood-vessels-metabolism]
+    aliases: [당뇨, 혈당질환, diabetes mellitus]
+  - slug: hypertension-condition
+    title: 고혈압
+    body_systems: [blood-vessels-metabolism]
+    aliases: [혈압, 높은 혈압, 혈관질환, 혈액순환, hypertension]
+  - slug: osteoporosis-condition
+    title: 골다공증
+    body_systems: [joints-bones-pain]
+    aliases: [골밀도, 뼈 약화, 칼슘 부족, osteoporosis]
+  - slug: gastrointestinal-disease
+    title: 위장질환
+    body_systems: [digestive-gut]
+    aliases: [위 질환, 위장, 위염, 위궤양, gastrointestinal disease]
+  - slug: intestinal-disease
+    title: 장질환
+    body_systems: [digestive-gut]
+    aliases: [장 질환, 장염, 장 건강, intestinal disease]
+  - slug: asthma-condition
+    title: 천식
+    body_systems: [skin-allergy-immunity]
+    aliases: [기관지천식, 호흡기질환, asthma]
+  - slug: allergy-condition
+    title: 알레르기
+    body_systems: [skin-allergy-immunity]
+    aliases: [알러지, 과민반응, 비염, 피부염, allergy]
+
+foods:
+  - slug: garlic
+    title: 마늘
+    body_systems: [food-additives]
+    aliases: [마늘, 갈릭, garlic]
+  - slug: onion
+    title: 양파
+    body_systems: [food-additives]
+    aliases: [양파, onion]
+  - slug: cabbage
+    title: 양배추
+    body_systems: [food-additives, digestive-gut]
+    aliases: [양배추, cabbage]
+  - slug: broccoli
+    title: 브로콜리
+    body_systems: [food-additives]
+    aliases: [브로컬리, broccoli]
+  - slug: bean
+    title: 콩
+    body_systems: [food-additives]
+    aliases: [대두, 두부, 콩류, bean, soy]
+  - slug: ginger
+    title: 생강
+    body_systems: [food-additives]
+    aliases: [생강, ginger]
+  - slug: carrot
+    title: 당근
+    body_systems: [food-additives]
+    aliases: [당근, carrot]
+  - slug: brown-rice
+    title: 현미
+    body_systems: [food-additives]
+    aliases: [현미, 통곡물, brown rice]
+  - slug: cheonggukjang
+    title: 청국장
+    body_systems: [food-additives, digestive-gut]
+    aliases: [청국장, 발효콩, fermented soybean]
+  - slug: perilla
+    title: 들깨
+    body_systems: [food-additives]
+    aliases: [들깨, 들기름, perilla]
+  - slug: flax
+    title: 아마
+    body_systems: [food-additives]
+    aliases: [아마씨, 아마유, flax, flaxseed]
+  - slug: tomato
+    title: 토마토
+    body_systems: [food-additives]
+    aliases: [토마토, 라이코펜, tomato]
+  - slug: mushroom
+    title: 버섯
+    body_systems: [food-additives, skin-allergy-immunity]
+    aliases: [버섯, 표고, mushroom]
+  - slug: milk
+    title: 우유
+    body_systems: [food-additives, joints-bones-pain]
+    aliases: [유제품, 유단백질, 칼슘, 골다공증, milk, dairy]
+  - slug: dairy
+    title: 유제품
+    body_systems: [food-additives, joints-bones-pain]
+    aliases: [우유, 치즈, 요구르트, 요거트, dairy]
+  - slug: meat
+    title: 고기
+    body_systems: [food-additives]
+    aliases: [육류, 동물성 단백질, 소고기, 돼지고기, 닭고기, 육식, 마블링]
+  - slug: beef
+    title: 소고기
+    body_systems: [food-additives]
+    aliases: [쇠고기, 우육, beef]
+  - slug: pork
+    title: 돼지고기
+    body_systems: [food-additives]
+    aliases: [돈육, pork]
+  - slug: chicken
+    title: 닭고기
+    body_systems: [food-additives]
+    aliases: [계육, chicken]
+  - slug: fish
+    title: 생선
+    body_systems: [food-additives]
+    aliases: [어류, 물고기, fish]
+  - slug: flour
+    title: 밀가루
+    body_systems: [food-additives]
+    aliases: [밀, 글루텐, 수입밀, flour, wheat, gluten]
+  - slug: soda
+    title: 탄산음료
+    body_systems: [food-additives, children-family-health]
+    aliases: [탄산, 콜라, 사이다, 인산염, 청량음료, soda, soft drink]
+  - slug: processed-food
+    title: 가공식품
+    body_systems: [food-additives]
+    aliases: [가공 식품, 인스턴트, 포장식품, processed food]
+  - slug: fast-food
+    title: 패스트푸드
+    body_systems: [food-additives]
+    aliases: [패스트 푸드, 햄버거, 튀김, fast food]
+
+substances:
+  - slug: food-additives-topic
+    title: 식품첨가물
+    body_systems: [food-additives]
+    aliases: [첨가물, 화학첨가물, 착색료, 착향료, 보존료, 색소]
+  - slug: preservative
+    title: 방부제
+    body_systems: [food-additives]
+    aliases: [보존료, 합성보존료, 안식향산나트륨, 벤조산나트륨, preservative]
+  - slug: sodium-benzoate
+    title: 안식향산나트륨
+    body_systems: [food-additives]
+    aliases: [벤조산나트륨, 안식향산, sodium benzoate, benzoate]
+  - slug: benzoic-sodium
+    title: 벤조산나트륨
+    body_systems: [food-additives]
+    aliases: [안식향산나트륨, sodium benzoate, benzoate]
+  - slug: potassium-sorbate
+    title: 소르빈산칼륨
+    body_systems: [food-additives]
+    aliases: [소르빈산, potassium sorbate, sorbate]
+  - slug: colorant
+    title: 착색료
+    body_systems: [food-additives, skin-allergy-immunity]
+    aliases: [색소, 합성색소, 식용색소, food coloring, colorant]
+  - slug: flavoring
+    title: 착향료
+    body_systems: [food-additives]
+    aliases: [향료, 합성향료, 천연착향료, flavoring]
+  - slug: tar-color
+    title: 타르색소
+    body_systems: [food-additives, skin-allergy-immunity]
+    aliases: [타르 색소, 합성착색료, tar color, tar dye]
+  - slug: msg
+    title: MSG
+    body_systems: [food-additives]
+    aliases: [글루탐산나트륨, 엠에스지, monosodium glutamate, msg]
+  - slug: sodium-nitrite
+    title: 아질산나트륨
+    body_systems: [food-additives]
+    aliases: [아질산염, sodium nitrite, nitrite]
+  - slug: antibiotics
+    title: 항생제
+    body_systems: [food-additives, skin-allergy-immunity]
+    aliases: [항균제, 축산 항생제, antibiotic, antibiotics]
+  - slug: growth-hormone
+    title: 성장호르몬
+    body_systems: [food-additives, women-hormones]
+    aliases: [호르몬제, 축산 호르몬, growth hormone]
+  - slug: pesticide
+    title: 농약
+    body_systems: [food-additives]
+    aliases: [잔류농약, pesticide]
+  - slug: insecticide
+    title: 살충제
+    body_systems: [food-additives]
+    aliases: [해충약, insecticide]
+  - slug: bleach
+    title: 표백제
+    body_systems: [food-additives]
+    aliases: [표백, bleaching agent, bleach]
+  - slug: post-harvest
+    title: 포스트하비스트
+    body_systems: [food-additives]
+    aliases: [수확후처리, 포스트 하비스트, postharvest, post-harvest]
+  - slug: gmo
+    title: GMO
+    body_systems: [food-additives]
+    aliases: [유전자조작, 유전자 변형, genetically modified, gmo]
+  - slug: marbling
+    title: 마블링
+    body_systems: [food-additives]
+    aliases: [지방마블링, 지방 많은 고기, marbling]
+  - slug: factory-farming
+    title: 공장식 축산
+    body_systems: [food-additives]
+    aliases: [공장식 사육, 밀집사육, 축산공장, factory farming]
+
+habits:
+  - slug: sleep
+    title: 수면
+    body_systems: [lifestyle-natural-healing]
+    aliases: [잠, 숙면, 불면, sleep]
+  - slug: exercise
+    title: 운동
+    body_systems: [lifestyle-natural-healing]
+    aliases: [걷기, 활동, 신체활동, exercise]
+  - slug: stress
+    title: 스트레스
+    body_systems: [lifestyle-natural-healing, skin-allergy-immunity]
+    aliases: [긴장, 정신적 스트레스, stress]
+  - slug: eating-habits
+    title: 식습관
+    body_systems: [food-additives, lifestyle-natural-healing]
+    aliases: [먹는 습관, 식생활, 식이, diet, eating habit]
+  - slug: natural-healing
+    title: 자연치유
+    body_systems: [lifestyle-natural-healing]
+    aliases: [자연요법, 생활치유, natural healing]
+  - slug: medication-use
+    title: 약물복용
+    body_systems: [lifestyle-natural-healing]
+    aliases: [약물, 약 복용, 진통제, 스테로이드, 수면제, medication]

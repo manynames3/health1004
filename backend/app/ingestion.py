@@ -18,6 +18,7 @@ from app.extraction import (
 )
 from app.language import detect_language
 from app.s3_store import S3Storage
+from app.taxonomy import apply_tagging_to_chunk, build_taxonomy_report, load_taxonomy
 from app.vector_bundle import build_vector_bundle, make_vector_record, parse_vector_bundle
 
 logger = logging.getLogger("ingestion")
@@ -38,6 +39,7 @@ def ingest_pdf_paths(
     storage = storage or S3Storage(settings)
     bedrock = bedrock or BedrockRuntime(settings)
     bundle_key = vector_bundle_key or settings.vector_bundle_key
+    taxonomy = load_taxonomy(settings.taxonomy_seed_path)
     normalized_paths = sorted(path.resolve() for path in pdf_paths)
 
     manifest = storage.documents_manifest()
@@ -96,6 +98,7 @@ def ingest_pdf_paths(
                 checksum_to_document=checksum_to_document,
                 vector_records_by_doc=vector_records_by_doc,
                 report=report,
+                taxonomy=taxonomy,
             )
             report["files"].append(file_report)
             if file_report["status"] == "skipped":
@@ -128,6 +131,8 @@ def ingest_pdf_paths(
         "record_count": len(all_vector_records),
         "bytes_gzipped": len(vector_payload),
     }
+    tagged_chunks = [record["chunk"] for record in all_vector_records]
+    report["taxonomy"] = build_taxonomy_report(tagged_chunks, taxonomy)
     report_key = f"{settings.reports_prefix.rstrip('/')}/ingestion_report.json"
     storage.put_json(settings.metadata_key, manifest)
     storage.put_json(report_key, report)
@@ -147,6 +152,7 @@ def process_pdf(
     checksum_to_document: dict[str, str],
     vector_records_by_doc: dict[str, list[dict[str, Any]]],
     report: dict[str, Any],
+    taxonomy,
 ) -> dict[str, Any]:
     checksum = sha256_file(pdf_path)
     existing_doc_id = checksum_to_document.get(checksum)
@@ -212,7 +218,10 @@ def process_pdf(
         pdf_s3_key=pdf_s3_key,
         extraction_method=extraction_method,
     )
-    chunk_dicts = [chunk.to_dict() for chunk in chunks]
+    chunk_dicts = [
+        apply_tagging_to_chunk(chunk.to_dict(), taxonomy, settings.min_tag_confidence)
+        for chunk in chunks
+    ]
     embeddings = bedrock.embed_texts([chunk["text"] for chunk in chunk_dicts], input_type="search_document")
     vector_records_by_doc[document_id] = [
         make_vector_record(chunk, embedding)

@@ -5,7 +5,7 @@ This Terraform is intentionally low-cost for a low-volume maintenance site. It c
 - One private S3 corpus bucket for raw PDFs, extracted text, metadata, ingestion reports, and `vector-index/chunks.json.gz`.
 - Two attachable IAM policies: one for manual ingestion and one for an optional AWS-hosted runtime with admin uploads.
 
-It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend is expected to stay on Cloudflare Pages.
+It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend is expected to stay on Cloudflare Pages. The application includes optional OpenSearch mapping/reindex scripts, but those scripts target an existing endpoint only when `OPENSEARCH_ENDPOINT` is configured.
 
 ## Apply
 

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: health1004-postgres
+    environment:
+      POSTGRES_DB: health1004
+      POSTGRES_USER: health1004
+      POSTGRES_PASSWORD: health1004
+    ports:
+      - "5432:5432"
+    volumes:
+      - health1004-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health1004 -d health1004"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  health1004-postgres-data:

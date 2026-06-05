@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, BookOpen, ChevronDown, ExternalLink, Loader2, Send, ShieldCheck } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { askQuestion } from "../lib/api";
 import { QueryResponse, RetrievedChunk } from "../types";
 
@@ -17,6 +17,14 @@ export function QueryWorkspace() {
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    const topic = params.get("topic");
+    if (q) setQuestion(q);
+    if (topic) setQuestion(`이 자료에서는 ${topic} 주제를 어떻게 설명하나요?`);
+  }, []);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -41,7 +49,7 @@ export function QueryWorkspace() {
         <div className="query-heading">
           <div>
             <p className="eyebrow">검색 / 질문</p>
-            <h2>한국어 PDF 근거 검색</h2>
+            <h2>원문 기반 요약</h2>
           </div>
           <div className="model-note">
             <ShieldCheck size={16} aria-hidden="true" />
@@ -122,6 +130,12 @@ export function QueryWorkspace() {
                 {response.warning_notes.map((note) => (
                   <p key={note}>{note}</p>
                 ))}
+              </div>
+            )}
+            {response.resolved_query && (
+              <div className="resolved-strip">
+                <span>resolved topics</span>
+                <strong>{response.resolved_query.matched_topics.join(", ") || "전체 아카이브"}</strong>
               </div>
             )}
             <div className="answer-text">{response.answer}</div>

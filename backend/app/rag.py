@@ -5,8 +5,9 @@ from app.bedrock import BedrockRuntime
 from app.citations import citation_from_chunk, dedupe_citations
 from app.config import Settings
 from app.language import detect_language
-from app.models import QueryRequest, QueryResponse
+from app.models import QueryRequest, QueryResponse, ResolvedQuery
 from app.s3_store import S3Storage
+from app.taxonomy import load_taxonomy, resolve_query, term_to_dict
 from app.vector_bundle import VectorBundleStore
 
 logger = logging.getLogger(__name__)
@@ -24,14 +25,25 @@ class RAGService:
         language = detect_language(request.question)
         bedrock = BedrockRuntime(self.settings)
         storage = S3Storage(self.settings)
-        vector_store = VectorBundleStore(self.settings, storage)
+        taxonomy = load_taxonomy(self.settings.taxonomy_seed_path)
+        resolved_payload = resolve_query(request.question, taxonomy)
+        if request.topic_slugs:
+            resolved_payload["matched_topic_slugs"] = list(
+                dict.fromkeys([*resolved_payload.get("matched_topic_slugs", []), *request.topic_slugs])
+            )
+            resolved_payload["retrieval_filters"]["topic_slugs"] = resolved_payload["matched_topic_slugs"]
+
+        vector_store = VectorBundleStore(_settings_for_best_bundle(self.settings, storage), storage)
 
         embeddings = bedrock.embed_texts([request.question], input_type="search_query")
         chunks = vector_store.search(
             query=request.question,
             query_embedding=embeddings[0],
             top_k=request.top_k,
-            use_hybrid=True,
+            use_hybrid=self.settings.opensearch_use_hybrid,
+            filters=resolved_payload.get("retrieval_filters"),
+            expanded_aliases=resolved_payload.get("expanded_aliases"),
+            allow_broader_fallback=True,
         )
 
         warning_notes: list[str] = []
@@ -49,11 +61,13 @@ class RAGService:
                 language=language,
                 warning_notes=warning_notes,
                 request_id=request_id,
+                resolved_query=ResolvedQuery(**resolved_payload),
+                related_topics=related_topic_dicts(resolved_payload, taxonomy),
             )
 
         answer = bedrock.generate_answer(question=request.question, chunks=chunks, language=language)
         citations = dedupe_citations(
-            [citation_from_chunk(chunk, pdf_url=storage.presign_pdf(chunk.pdf_s3_key)) for chunk in chunks]
+            [citation_from_chunk(chunk, pdf_url=storage.presign_pdf(chunk.pdf_s3_key or chunk.source_pdf_s3_key)) for chunk in chunks]
         )
         logger.info("Query completed", extra={"request_id": request_id})
         return QueryResponse(
@@ -63,4 +77,17 @@ class RAGService:
             language=language,
             warning_notes=warning_notes,
             request_id=request_id,
+            resolved_query=ResolvedQuery(**resolved_payload),
+            related_topics=related_topic_dicts(resolved_payload, taxonomy),
         )
+
+
+def _settings_for_best_bundle(settings: Settings, storage: S3Storage) -> Settings:
+    if settings.taxonomy_vector_bundle_key and storage.get_bytes(settings.taxonomy_vector_bundle_key):
+        return settings.model_copy(update={"vector_bundle_key": settings.taxonomy_vector_bundle_key})
+    return settings
+
+
+def related_topic_dicts(resolved_payload: dict, taxonomy) -> list[dict]:
+    slugs = resolved_payload.get("matched_topic_slugs", [])[:8]
+    return [term_to_dict(taxonomy.term(slug)) for slug in slugs if taxonomy.term(slug)]

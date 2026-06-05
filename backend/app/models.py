@@ -10,6 +10,7 @@ class QueryRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=4000)
     top_k: int = Field(default=8, ge=1, le=20)
     include_sources: bool = True
+    topic_slugs: list[str] = Field(default_factory=list)
 
 
 class Citation(BaseModel):
@@ -25,6 +26,10 @@ class Citation(BaseModel):
     section_title: Optional[str] = None
     quote: str
     pdf_url: Optional[str] = None
+    series: Optional[str] = None
+    volume: Optional[str] = None
+    lesson_number: Optional[str] = None
+    source_page_image_s3_key: Optional[str] = None
 
 
 class RetrievedChunk(BaseModel):
@@ -41,10 +46,49 @@ class RetrievedChunk(BaseModel):
     language: LanguageCode = "unknown"
     text: str
     score: float = 0.0
+    article_id: Optional[str] = None
     source_s3_key: Optional[str] = None
     pdf_s3_key: Optional[str] = None
+    source_pdf_s3_key: Optional[str] = None
+    source_text_s3_key: Optional[str] = None
+    source_page_image_s3_key: Optional[str] = None
     extraction_method: Optional[str] = None
     token_count: Optional[int] = None
+    original_korean_text: Optional[str] = None
+    english_summary_optional: Optional[str] = None
+    body_system_tags: list[str] = Field(default_factory=list)
+    symptom_tags: list[str] = Field(default_factory=list)
+    condition_tags: list[str] = Field(default_factory=list)
+    food_tags: list[str] = Field(default_factory=list)
+    substance_tags: list[str] = Field(default_factory=list)
+    habit_tags: list[str] = Field(default_factory=list)
+    body_system_slugs: list[str] = Field(default_factory=list)
+    symptom_slugs: list[str] = Field(default_factory=list)
+    condition_slugs: list[str] = Field(default_factory=list)
+    food_slugs: list[str] = Field(default_factory=list)
+    substance_slugs: list[str] = Field(default_factory=list)
+    habit_slugs: list[str] = Field(default_factory=list)
+    avoid_tags: list[str] = Field(default_factory=list)
+    recommended_food_tags: list[str] = Field(default_factory=list)
+    topic_slugs: list[str] = Field(default_factory=list)
+    confidence_score: Optional[float] = None
+    needs_human_review: bool = False
+    embedding_id: Optional[str] = None
+
+
+class ResolvedQuery(BaseModel):
+    original_query: str
+    detected_language: LanguageCode
+    matched_topics: list[str] = Field(default_factory=list)
+    matched_topic_slugs: list[str] = Field(default_factory=list)
+    matched_body_systems: list[str] = Field(default_factory=list)
+    matched_body_system_slugs: list[str] = Field(default_factory=list)
+    expanded_aliases: list[str] = Field(default_factory=list)
+    retrieval_filters: dict[str, list[str]] = Field(default_factory=dict)
+
+
+class ResolveQueryRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=4000)
 
 
 class QueryResponse(BaseModel):
@@ -54,6 +98,8 @@ class QueryResponse(BaseModel):
     language: LanguageCode
     warning_notes: list[str] = Field(default_factory=list)
     request_id: str
+    resolved_query: Optional[ResolvedQuery] = None
+    related_topics: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class DocumentSummary(BaseModel):
@@ -65,6 +111,9 @@ class DocumentSummary(BaseModel):
     page_count: int = 0
     chunk_count: int = 0
     extraction_method: Optional[str] = None
+    series: Optional[str] = None
+    volume: Optional[str] = None
+    lesson_number: Optional[str] = None
     pdf_s3_key: Optional[str] = None
     pdf_url: Optional[str] = None
     checksum: Optional[str] = None
@@ -79,6 +128,51 @@ class DocumentDetail(DocumentSummary):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentSummary]
+
+
+class TopicSummary(BaseModel):
+    slug: str
+    title: str
+    english_title: Optional[str] = None
+    category: str
+    aliases: list[str] = Field(default_factory=list)
+    body_system_slugs: list[str] = Field(default_factory=list)
+    related_slugs: list[str] = Field(default_factory=list)
+    source_count: int = 0
+
+
+class TaxonomyResponse(BaseModel):
+    categories: dict[str, list[TopicSummary]]
+    topic_count: int
+    alias_count: int
+
+
+class TopicListResponse(BaseModel):
+    topics: list[TopicSummary]
+
+
+class TopicDetailResponse(TopicSummary):
+    related_topics: list[TopicSummary] = Field(default_factory=list)
+    source_passages: list[RetrievedChunk] = Field(default_factory=list)
+    related_documents: list[DocumentSummary] = Field(default_factory=list)
+    safety_disclaimer: str = "이 아카이브는 역사적/교육적 원문 자료이며 의학적 진단이나 처방이 아닙니다."
+
+
+class PassageListResponse(BaseModel):
+    passages: list[RetrievedChunk]
+    total: int
+
+
+class AdminReviewTagRequest(BaseModel):
+    chunk_id: str
+    topic_slugs: list[str] = Field(default_factory=list)
+    confidence_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    needs_human_review: bool = False
+
+
+class AdminReviewTagResponse(BaseModel):
+    status: Literal["updated", "not_configured"]
+    chunk_id: str
 
 
 class AdminStatusResponse(BaseModel):

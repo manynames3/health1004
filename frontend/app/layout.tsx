@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Health1004 | Korean Natural Health PDF Intelligence",
-  description: "Citation-first search over the Korean Health1004 natural-health PDF archive"
+  title: "건강미인 지식서재 | 원문 기반 건강 아카이브",
+  description: "증상, 음식, 질환, 식품첨가물, 생활습관으로 찾아보는 Korean natural health archive"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

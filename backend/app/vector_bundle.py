@@ -64,21 +64,73 @@ class VectorBundleStore:
         query_embedding: list[float],
         top_k: int,
         use_hybrid: bool = True,
+        filters: dict[str, list[str]] | None = None,
+        expanded_aliases: list[str] | None = None,
+        allow_broader_fallback: bool = True,
     ) -> list[RetrievedChunk]:
         bundle = self.load()
-        query_norm = vector_norm(query_embedding)
-        query_tokens = tokenize(query)
-        scored: list[tuple[float, dict[str, Any]]] = []
+        return search_records(
+            records=bundle.records,
+            query=query,
+            query_embedding=query_embedding,
+            top_k=top_k,
+            use_hybrid=use_hybrid,
+            filters=filters,
+            expanded_aliases=expanded_aliases,
+            allow_broader_fallback=allow_broader_fallback,
+        )
 
-        for record in bundle.records:
-            vector_score = cosine_similarity(query_embedding, query_norm, record.embedding, record.embedding_norm)
-            lexical_score = jaccard_score(query_tokens, record.lexical_tokens) if use_hybrid else 0.0
-            title_bonus = title_match_bonus(query_tokens, record.chunk) if use_hybrid else 0.0
-            score = vector_score + (0.18 * lexical_score) + title_bonus
-            scored.append((score, record.chunk))
 
-        scored.sort(key=lambda item: item[0], reverse=True)
-        return [RetrievedChunk(score=score, **chunk) for score, chunk in scored[:top_k]]
+def search_records(
+    *,
+    records: list[VectorRecord],
+    query: str,
+    query_embedding: list[float],
+    top_k: int,
+    use_hybrid: bool = True,
+    filters: dict[str, list[str]] | None = None,
+    expanded_aliases: list[str] | None = None,
+    allow_broader_fallback: bool = True,
+) -> list[RetrievedChunk]:
+    filtered = [record for record in records if record_matches_filters(record.chunk, filters)]
+    if allow_broader_fallback and len(filtered) < top_k:
+        filtered = records
+    return score_records(
+        records=filtered,
+        query=query,
+        query_embedding=query_embedding,
+        top_k=top_k,
+        use_hybrid=use_hybrid,
+        filters=filters,
+        expanded_aliases=expanded_aliases,
+    )
+
+
+def score_records(
+    *,
+    records: list[VectorRecord],
+    query: str,
+    query_embedding: list[float],
+    top_k: int,
+    use_hybrid: bool,
+    filters: dict[str, list[str]] | None,
+    expanded_aliases: list[str] | None,
+) -> list[RetrievedChunk]:
+    query_norm = vector_norm(query_embedding)
+    expanded_text = " ".join([query, *(expanded_aliases or [])])
+    query_tokens = tokenize(expanded_text)
+    scored: list[tuple[float, dict[str, Any]]] = []
+
+    for record in records:
+        vector_score = cosine_similarity(query_embedding, query_norm, record.embedding, record.embedding_norm)
+        lexical_score = jaccard_score(query_tokens, record.lexical_tokens) if use_hybrid else 0.0
+        title_bonus = title_match_bonus(query_tokens, record.chunk) if use_hybrid else 0.0
+        tag_bonus = taxonomy_filter_bonus(record.chunk, filters) if use_hybrid else 0.0
+        score = vector_score + (0.18 * lexical_score) + title_bonus + tag_bonus
+        scored.append((score, record.chunk))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return [RetrievedChunk(score=score, **chunk) for score, chunk in scored[:top_k]]
 
 
 def build_vector_bundle(
@@ -129,6 +181,18 @@ def parse_vector_bundle(payload: bytes) -> VectorBundle:
                             str(chunk.get("section_title", "")),
                             str(chunk.get("filename", "")),
                             str(chunk.get("text", "")),
+                            " ".join(chunk.get("topic_slugs", []) or []),
+                            " ".join(chunk.get("body_system_slugs", []) or []),
+                            " ".join(chunk.get("symptom_slugs", []) or []),
+                            " ".join(chunk.get("condition_slugs", []) or []),
+                            " ".join(chunk.get("food_slugs", []) or []),
+                            " ".join(chunk.get("substance_slugs", []) or []),
+                            " ".join(chunk.get("habit_slugs", []) or []),
+                            " ".join(
+                                str(match.get("alias", ""))
+                                for match in chunk.get("matched_aliases", []) or []
+                                if isinstance(match, dict)
+                            ),
                         ]
                     )
                 ),
@@ -178,3 +242,33 @@ def title_match_bonus(query_tokens: set[str], chunk: dict[str, Any]) -> float:
     if not query_tokens or not haystack:
         return 0.0
     return min(0.05, 0.01 * len(query_tokens & haystack))
+
+
+def record_matches_filters(chunk: dict[str, Any], filters: dict[str, list[str]] | None) -> bool:
+    if not filters:
+        return True
+    for field, wanted in filters.items():
+        if not wanted:
+            continue
+        values = chunk.get(field) or []
+        if isinstance(values, str):
+            values = [values]
+        if set(values) & set(wanted):
+            return True
+    return False
+
+
+def taxonomy_filter_bonus(chunk: dict[str, Any], filters: dict[str, list[str]] | None) -> float:
+    if not filters:
+        return 0.0
+    matched_fields = 0
+    matched_values = 0
+    for field, wanted in filters.items():
+        values = chunk.get(field) or []
+        if isinstance(values, str):
+            values = [values]
+        overlap = set(values) & set(wanted)
+        if overlap:
+            matched_fields += 1
+            matched_values += len(overlap)
+    return min(0.22, 0.08 * matched_fields + 0.02 * matched_values)

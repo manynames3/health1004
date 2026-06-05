@@ -1,0 +1,14 @@
+import { CategoryBrowser } from "../../components/CategoryBrowser";
+import { PageShell } from "../../components/SiteChrome";
+
+export default function SymptomsPage() {
+  return (
+    <PageShell
+      eyebrow="건강 고민별 자료 찾기"
+      title="내 증상/건강 고민으로 찾기"
+      subtitle="진단명이 아니어도 소화, 피로, 피부, 혈압 같은 표현에서 관련 원문 주제로 이동합니다."
+    >
+      <CategoryBrowser endpoint="/symptoms" />
+    </PageShell>
+  );
+}

@@ -1,25 +1,68 @@
-# AWS Korean PDF RAG
+# Health1004 Korean Archive
 
-Production-style RAG website for a one-time, manually ingested corpus of 572 weekly PDF newsletters from a Korean natural health practitioner. The app is for document search and education only; it is not medical diagnosis, treatment, or medication advice.
+Production-style AWS/cloud platform engineering sample for a taxonomy-first Korean natural-health PDF archive.
 
-## What It Builds
+Health1004 turns a one-time corpus of Korean weekly PDF newsletters into a browsable, source-traceable knowledge archive organized by symptoms, foods, conditions, substances, habits, and original documents. RAG is preserved as an assistant layer, but the main product is structured archive navigation with Korean-aware aliases, citations, and manual review paths.
 
-- Next.js static frontend with Korean-first search/chat UI, citations, retrieved passages, document browser, date/title filtering, and PDF links.
-- FastAPI backend with `/query`, `/documents`, `/documents/{document_id}`, `/admin/status`, `/admin/ingest`, and `/health`.
-- Manual and admin ingestion for PDFs with embedded-text extraction, Korean OCR fallback, chunking, Bedrock embeddings, S3 artifacts, a compressed S3 vector bundle, checksums, and ingestion reports.
-- Low-cost Terraform for a private S3 corpus bucket and attachable IAM policies. It intentionally does not provision OpenSearch, App Runner, ECR, CloudFront, or always-on compute.
+Live static frontend: [health1004.pages.dev](https://health1004.pages.dev)
 
-The corpus is ingested manually. There are no crawlers, schedulers, or recurring ingestion jobs.
+The live Pages deployment is the static frontend. The FastAPI backend, Bedrock calls, private S3 corpus, and optional database/index services require environment configuration and are designed to run locally or on a low-cost on-demand runtime.
+
+## Why This Exists
+
+Korean semantic retrieval can be brittle for domain-specific OCR text. This project uses a controlled taxonomy first, then layers retrieval and generation over tagged, citation-backed passages. The result is closer to a respectful digital archive than a generic chatbot demo.
+
+Primary user paths:
+
+- 내 증상/건강 고민으로 찾기
+- 음식/식재료로 찾기
+- 피해야 할 첨가물/화학물질 찾기
+- 질환별 자료 보기
+- 생활습관별 자료 보기
+- 원문 PDF 읽기
+- AI에게 질문하기
+
+The app is educational and archival. It is not medical diagnosis, treatment, dosage, or medication advice.
+
+## What Reviewers Should Notice
+
+| Area | Evidence in this repo |
+| --- | --- |
+| Cloud architecture | Terraform for low-cost S3/IAM, Cloudflare Pages static frontend, FastAPI backend boundary, Bedrock integration, optional OpenSearch mapping |
+| Cost discipline | No always-on OpenSearch, App Runner, ECR, CloudFront, or scheduled ingestion in the default Terraform |
+| Data pipeline | Manual PDF ingestion, page-aware extraction, Korean OCR fallback, checksums, S3 artifacts, ingestion reports |
+| Retrieval design | Taxonomy resolution before hybrid search, vector bundle fallback, OpenSearch Nori support when available |
+| Source traceability | PDF filename, title, page ranges, section heading, Korean quote, S3 keys, and signed PDF links in citations |
+| Operational maturity | Runbook, teardown guide, cost model, security notes, observability notes, ADRs, and CI workflow |
+| Testability | Backend pytest suite, static frontend build, Terraform format/validate workflow, Korean taxonomy evaluation script |
 
 ## Architecture
 
-1. Place PDFs in `./pdfs`.
-2. Run `python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/`.
-3. Ingestion uploads raw PDFs to S3, extracts page text, falls back to local Korean OCR when needed, writes JSON/Markdown artifacts, chunks Korean text, embeds chunks with Bedrock Cohere Embed Multilingual, and writes `vector-index/chunks.json.gz` to S3.
-4. Users ask questions in the frontend.
-5. FastAPI embeds the query, loads the cached S3 vector bundle, retrieves top chunks using exact vector plus keyword scoring, asks a Bedrock chat model to answer only from retrieved context, and returns structured citations.
+See [docs/architecture.md](docs/architecture.md) for diagrams and data flows.
 
-## Local Setup
+At a high level:
+
+1. A manual ingestion job uploads raw PDFs to private S3.
+2. Text is extracted page-by-page with Korean OCR fallback only when needed.
+3. Chunks keep page spans so citations remain page-accurate.
+4. Bedrock creates multilingual embeddings.
+5. A compressed S3 vector bundle is the default low-cost retrieval store.
+6. SQLAlchemy/Alembic adds structured taxonomy and review tables for local or hosted Postgres.
+7. Optional OpenSearch reindexing supports metadata filters and Korean Nori analysis when an endpoint exists.
+8. FastAPI resolves Korean queries into canonical topics and aliases before retrieval.
+9. Next.js renders taxonomy-first browsing and an assistant UI.
+
+## Tech Stack
+
+- Frontend: Next.js static export, React, TypeScript, Cloudflare Pages
+- Backend: FastAPI, Pydantic, SQLAlchemy, Alembic
+- AWS: S3, IAM, Bedrock Runtime, optional OpenSearch endpoint support
+- Retrieval: deterministic Korean alias matching, hybrid keyword/vector retrieval, S3 vector bundle
+- Ingestion: PyMuPDF, optional PaddleOCR, optional Tesseract Korean OCR
+- Infrastructure: Terraform for private S3 bucket and attachable IAM policies
+- Local development: Docker Compose Postgres
+
+## Local Quickstart
 
 ```bash
 cp .env.example .env
@@ -33,116 +76,35 @@ cp .env.local.example .env.local
 cd ..
 ```
 
-Fill `.env`:
+Set the required environment values:
 
 ```bash
 AWS_REGION=us-east-1
-S3_BUCKET=<terraform corpus bucket>
+S3_BUCKET=<private corpus bucket>
 VECTOR_BUNDLE_KEY=vector-index/chunks.json.gz
 VECTOR_DIMENSION=1024
+BEDROCK_EMBED_MODEL_ID=cohere.embed-multilingual-v3
 BEDROCK_CHAT_MODEL_ID=<your Bedrock chat model id>
-ADMIN_TOKEN=<strong shared secret for admin uploads>
+DATABASE_URL=postgresql+psycopg://health1004:health1004@localhost:5432/health1004
+ADMIN_TOKEN=<strong admin upload token>
+ADMIN_PASSWORD=<review UI password>
 ```
 
-The default embedding model is `cohere.embed-multilingual-v3`. Keep `VECTOR_DIMENSION=1024` for that model unless you change embedding models and rebuild the vector bundle.
-
-## AWS Prerequisites
-
-- AWS credentials available locally through your normal profile or environment.
-- Bedrock model access enabled in the selected `AWS_REGION`.
-- Access to `cohere.embed-multilingual-v3`.
-- Access to the configured `BEDROCK_CHAT_MODEL_ID`.
-- Terraform installed.
-
-## Bedrock Model Notes
-
-The ingestion and query paths call Bedrock Runtime directly with `boto3`.
-
-- Document chunks use Cohere Embed `input_type="search_document"`.
-- User queries use `input_type="search_query"`.
-- The answer model uses Bedrock Converse API so the model id remains configurable.
-
-If your selected chat model requires an inference profile, set `BEDROCK_CHAT_MODEL_ID` to the profile-compatible id and make sure IAM permits it.
-
-## Ingest PDFs
-
-Put the 572 PDFs in:
+Start local Postgres and migrate:
 
 ```bash
-./pdfs
+docker compose up -d postgres
+DATABASE_URL=postgresql+psycopg://health1004:health1004@localhost:5432/health1004 alembic upgrade head
 ```
 
-Run:
-
-```bash
-python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/
-```
-
-Useful options:
-
-```bash
-python scripts/ingest.py --pdf-dir ./pdfs --limit 3
-python scripts/ingest.py --pdf-dir ./pdfs --force
-python scripts/ingest.py --pdf-dir ./pdfs --report-path ./ingestion_report.json
-```
-
-The CLI skips files whose checksum already exists in `metadata/documents.json` unless `--force` is passed.
-
-## Admin Uploads
-
-Set `ADMIN_TOKEN` on the FastAPI backend, then open the Admin section in the frontend. The admin form sends the token as `X-Admin-Token`, uploads one or more PDFs to `/admin/ingest`, and runs the same ingestion pipeline as the CLI.
-
-Admin API endpoints:
-
-- `GET /admin/status` verifies the admin token and returns S3/vector configuration.
-- `POST /admin/ingest` accepts multipart PDF uploads, uploads raw PDFs to S3, writes extracted artifacts, refreshes `metadata/documents.json`, rebuilds `vector-index/chunks.json.gz`, and returns the ingestion report summary.
-
-For AWS-hosted backends, the runtime role needs the Terraform `runtime_policy_arn`, which includes S3 write access for admin ingestion.
-
-Artifacts written to S3:
-
-- `raw-pdfs/<filename>.pdf`
-- `extracted/<document_id>/pages.json`
-- `extracted/<document_id>/pages.md`
-- `metadata/documents.json`
-- `ingestion-reports/ingestion_report.json`
-- `vector-index/chunks.json.gz`
-
-The same report is also written locally to `ingestion_report.json` by default. It includes:
-
-- run id, start/end timestamps, and configured model/vector-bundle settings
-- per-file status, checksum, page count, chunk count, and S3 artifact keys
-- embedded-text quality diagnostics
-- OCR attempt diagnostics, engine name, mean confidence where available, and fallback errors
-- low-text/garbled/weak-language flags
-- skipped, failed, OCR fallback, OCR failure, and low-confidence counts
-
-## Korean OCR
-
-Embedded selectable text is tried first with PyMuPDF. If the extracted text is too short or garbled, local OCR is attempted:
-
-1. PaddleOCR Korean if installed.
-2. Tesseract with `kor+eng`.
-
-On macOS:
-
-```bash
-brew install tesseract tesseract-lang
-pip install paddleocr
-```
-
-PaddleOCR is optional because it is large; the backend Dockerfile installs Tesseract Korean and English language packs.
-
-## Run Locally
-
-Backend:
+Run the API:
 
 ```bash
 cd backend
 PYTHONPATH=. uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Frontend:
+Run the frontend:
 
 ```bash
 cd frontend
@@ -151,93 +113,155 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Deploy AWS Storage With Terraform
+## Ingestion And Taxonomy Commands
 
-Initialize:
+Put PDFs in `./pdfs`, then run manual ingestion:
+
+```bash
+python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/
+```
+
+Useful ingestion options:
+
+```bash
+python scripts/ingest.py --pdf-dir ./pdfs --limit 3
+python scripts/ingest.py --pdf-dir ./pdfs --force
+python scripts/ingest.py --pdf-dir ./pdfs --report-path ./ingestion_report.json
+```
+
+The ingestion report includes per-file status, checksums, page counts, chunk counts, OCR diagnostics, suspicious extraction flags, S3 artifact keys, and vector bundle settings.
+
+Build or update the controlled taxonomy:
+
+```bash
+python scripts/build_taxonomy.py --seed data/taxonomy.seed.yaml
+```
+
+Tag or re-tag existing chunks without rerunning OCR:
+
+```bash
+python scripts/tag_passages.py --source existing --report outputs/taxonomy_report.json
+python scripts/tag_passages.py --source existing --force --report outputs/taxonomy_report.json
+```
+
+Rebuild taxonomy-aware OpenSearch artifacts, or reindex a configured endpoint:
+
+```bash
+python scripts/reindex_with_taxonomy.py --rebuild
+```
+
+If `OPENSEARCH_ENDPOINT` is not set, the script writes local mapping and reindex-plan artifacts only. This keeps the default project low-cost.
+
+Run taxonomy retrieval evaluation:
+
+```bash
+python scripts/evaluate_taxonomy_retrieval.py
+```
+
+The evaluation prints resolved topics, filters, top retrieved passages, document/page sources, and whether citations were returned before answer generation.
+
+## API Surface
+
+Archive and taxonomy:
+
+- `GET /taxonomy`
+- `GET /topics`
+- `GET /topics/{slug}`
+- `GET /symptoms`
+- `GET /foods`
+- `GET /conditions`
+- `GET /substances`
+- `GET /habits`
+- `GET /documents`
+- `GET /documents/{document_id}`
+- `GET /passages?topic=...`
+
+Query and assistant:
+
+- `POST /query/resolve`
+- `POST /query`
+
+Admin:
+
+- `GET /admin/status`
+- `POST /admin/ingest`
+- `GET /admin/low-confidence-passages`
+- `POST /admin/review-tag`
+
+Admin upload endpoints require `ADMIN_TOKEN`. Review endpoints use `ADMIN_PASSWORD`, with local-only fallback for development.
+
+## Verification
+
+Local checks:
+
+```bash
+cd backend
+PYTHONPATH=. pytest
+
+cd ../frontend
+npm run build
+
+cd ../infra
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+```
+
+CI mirrors these checks in [.github/workflows/ci.yml](.github/workflows/ci.yml). No status badge is shown because a badge would imply a hosted CI history that may not exist yet on a fresh fork.
+
+## Deploy And Operate
+
+Detailed operational docs:
+
+- [docs/deployment.md](docs/deployment.md)
+- [docs/runbook.md](docs/runbook.md)
+- [docs/security.md](docs/security.md)
+- [docs/observability.md](docs/observability.md)
+- [docs/cost-model.md](docs/cost-model.md)
+- [docs/teardown.md](docs/teardown.md)
+- [docs/testing.md](docs/testing.md)
+- [docs/tradeoffs.md](docs/tradeoffs.md)
+- [docs/adrs/README.md](docs/adrs/README.md)
+- [docs/safety.md](docs/safety.md)
+- [docs/ocr-troubleshooting.md](docs/ocr-troubleshooting.md)
+
+Terraform creates only the private S3 corpus bucket and attachable IAM policies:
 
 ```bash
 cd infra
 terraform init
-```
-
-```bash
 terraform apply \
   -var="aws_region=us-east-1" \
   -var="bedrock_chat_model_id=<chat-model-id>"
 ```
 
-This creates only a private S3 corpus bucket and attachable IAM policies. The static frontend is deployed separately on Cloudflare Pages, and the API can run locally or on an on-demand runtime if needed.
+Attach `ingestion_policy_arn` to the IAM principal that runs ingestion. Attach `runtime_policy_arn` only if the FastAPI backend is hosted on AWS.
 
-## API
+## Project Structure
 
-`POST /query`
-
-```json
-{
-  "question": "수면에 대해 문서에서는 무엇을 말하나요?",
-  "top_k": 8,
-  "include_sources": true
-}
+```text
+backend/          FastAPI API, ingestion helpers, retrieval, taxonomy, DB models, tests
+data/             Controlled Korean taxonomy seed
+docs/             Architecture, operations, security, ADRs, review guide
+frontend/         Next.js static export for Cloudflare Pages
+infra/            Terraform for private S3 and IAM policies
+scripts/          Ingestion, taxonomy tagging, reindexing, retrieval evaluation
+outputs/          Local generated reports and mapping plans, ignored except .gitkeep
 ```
 
-Response:
+## Known Limitations
 
-```json
-{
-  "answer": "...",
-  "citations": [
-    {
-      "document_id": "...",
-      "chunk_id": "...",
-      "title": "...",
-      "filename": "...",
-      "detected_date": "2024-01-05",
-      "page_start": 3,
-      "page_end": 4,
-      "quote": "...",
-      "pdf_url": "..."
-    }
-  ],
-  "retrieved_chunks": [],
-  "language": "ko",
-  "warning_notes": [],
-  "request_id": "..."
-}
-```
+- The live Pages site is static unless connected to a configured backend API.
+- The default Terraform intentionally avoids expensive always-on search or compute services.
+- OCR quality depends on the source PDFs and installed local OCR engines.
+- Retrieval quality still needs human evaluation against the real corpus before public medical-adjacent use.
+- Admin authentication is intentionally minimal for a low-volume internal workflow.
+- Retrieval logs can contain user questions if persisted; review retention and privacy policy before production use.
 
-## Tests
+## Next Production Hardening
 
-```bash
-cd backend
-PYTHONPATH=. pytest
-```
-
-Coverage includes chunking, citation formatting, language detection, vector-bundle retrieval, query response schema, and OCR fallback decision logic.
-
-## Retrieval Evaluation
-
-Print retrieved chunks for 10 Korean smoke-test questions before any answer generation:
-
-```bash
-python scripts/evaluate_retrieval.py --top-k 5
-```
-
-Generate answers only after reviewing retrieved chunks:
-
-```bash
-python scripts/evaluate_retrieval.py --top-k 5 --generate
-```
-
-You can supply your own UTF-8 question file:
-
-```bash
-python scripts/evaluate_retrieval.py --questions-file ./eval-questions.txt --top-k 8
-```
-
-## Safety
-
-The system prompt requires the model to use only retrieved context, cite factual claims, say when evidence is insufficient, avoid diagnosis or treatment advice, and include a brief safety note for personal health questions.
-
-The frontend always displays:
-
-> This system summarizes uploaded documents and is not medical advice. Consult a qualified professional for medical decisions.
+- Add hosted API runtime choice and deployment automation.
+- Add structured metrics and alerts for query errors, Bedrock failures, ingestion failures, and citation gaps.
+- Add object lifecycle policies if source artifacts grow.
+- Add a human review workflow for low-confidence taxonomy assignments.
+- Add auth if the archive should remain private.

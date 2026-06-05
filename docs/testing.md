@@ -1,0 +1,88 @@
+# Testing
+
+The repository uses focused tests and build checks rather than claiming broad production certification.
+
+## Backend Tests
+
+Run:
+
+```bash
+cd backend
+PYTHONPATH=. pytest
+```
+
+Current test areas include:
+
+- Korean alias matching
+- query-to-topic resolution
+- passage tagging
+- taxonomy seed loading
+- citation formatting
+- topic page API response
+- hybrid retrieval filter construction
+- RAG response schema
+- admin authentication and ingestion boundaries
+- extraction fallback decisions
+- vector bundle retrieval behavior
+
+## Frontend Build
+
+Run:
+
+```bash
+cd frontend
+npm run build
+```
+
+The frontend uses Next.js static export. Build success verifies route generation and TypeScript compilation for the static site.
+
+## Terraform Validation
+
+Run:
+
+```bash
+cd infra
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+```
+
+This validates syntax and provider configuration without applying infrastructure.
+
+## Retrieval Evaluation
+
+Run:
+
+```bash
+python scripts/evaluate_taxonomy_retrieval.py
+```
+
+The script prints:
+
+- Korean question
+- resolved topics
+- filters used
+- expanded aliases
+- retrieved chunks
+- source document and page
+- citation status
+
+This is a qualitative retrieval sanity check, not an automated clinical or factual benchmark.
+
+## CI
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/ci.yml
+```
+
+The workflow runs backend tests, frontend build, and Terraform format/validate. It does not deploy and does not require AWS credentials.
+
+## Gaps
+
+- No browser automation test suite yet.
+- No load tests.
+- No hosted API smoke test in CI.
+- No automated citation faithfulness scoring.
+- No OCR accuracy benchmark against hand-labeled pages.

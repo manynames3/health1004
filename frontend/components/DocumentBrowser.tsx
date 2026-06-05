@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, FileText, Loader2, Search } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchDocuments } from "../lib/api";
 import { DocumentSummary } from "../types";
@@ -64,7 +65,9 @@ export function DocumentBrowser() {
           <article className="document-row" key={doc.document_id}>
             <FileText size={19} aria-hidden="true" />
             <div className="document-main">
-              <h3>{doc.title}</h3>
+              <h3>
+                <Link href={`/documents/${doc.document_id}/`}>{doc.title}</Link>
+              </h3>
               <p>
                 {doc.detected_date || "날짜 미상"} · {doc.page_count} pages · {doc.chunk_count} chunks
               </p>

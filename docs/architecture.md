@@ -1,55 +1,123 @@
 # Architecture
 
-## Components
+Health1004 is a taxonomy-first Korean PDF archive with an optional assistant layer. The default architecture favors low operating cost: static frontend, private S3 corpus storage, manual ingestion, Bedrock calls only when needed, and an S3-hosted vector bundle instead of an always-on search cluster.
 
-- Frontend: static Next.js app hosted on Cloudflare Pages.
-- Backend: FastAPI app that can run locally or on low-cost on-demand compute.
-- Corpus storage: S3 bucket with raw PDFs, extracted JSON/Markdown, metadata, and ingestion reports.
-- Vector store: gzipped S3 vector bundle loaded and cached by the backend for exact search.
-- Models: Amazon Bedrock Cohere Embed Multilingual for embeddings and a configurable Bedrock chat model for answers.
+## Container View
 
-## Query Flow
+```mermaid
+flowchart TB
+    User["Reader or archive reviewer"]
+    Admin["Archive admin"]
 
-1. Frontend posts a question to `/query`.
-2. Backend detects Korean, English, mixed, or unknown language.
-3. Backend embeds the query with `input_type="search_query"`.
-4. Backend retrieves chunks from the cached S3 vector bundle by vector similarity and keyword scoring.
-5. Backend sends retrieved context and citation metadata to Bedrock Converse.
-6. Backend returns answer, citations, retrieved chunks, warnings, and request id.
+    subgraph Edge["Cloudflare"]
+        Pages["Cloudflare Pages\nNext.js static export"]
+    end
+
+    subgraph App["API runtime\nlocal or on-demand host"]
+        FastAPI["FastAPI backend"]
+        Resolver["Korean query resolver\naliases and taxonomy filters"]
+        Retriever["Hybrid retrieval\nmetadata, keyword, vector"]
+        Ingestion["Manual ingestion pipeline"]
+    end
+
+    subgraph AWS["AWS account"]
+        S3["Private S3 corpus bucket\nPDFs, extracted text, reports,\nvector bundles"]
+        Bedrock["Amazon Bedrock Runtime\nembeddings and chat"]
+        OpenSearch["Optional existing OpenSearch endpoint\nmetadata filters and Nori analyzer"]
+    end
+
+    subgraph Data["Local or hosted database"]
+        Postgres["Postgres\nSQLAlchemy and Alembic"]
+    end
+
+    User --> Pages
+    Pages --> FastAPI
+    Admin --> Pages
+    Admin --> FastAPI
+    FastAPI --> Resolver
+    Resolver --> Retriever
+    Retriever --> S3
+    Retriever -. optional .-> OpenSearch
+    FastAPI --> Bedrock
+    FastAPI --> Postgres
+    Ingestion --> S3
+    Ingestion --> Bedrock
+    Ingestion --> Postgres
+```
+
+## Runtime Query Flow
+
+```mermaid
+sequenceDiagram
+    participant UI as Next.js UI
+    participant API as FastAPI
+    participant Tax as Taxonomy resolver
+    participant Store as S3 vector bundle or OpenSearch
+    participant BR as Bedrock
+
+    UI->>API: POST /query
+    API->>Tax: Normalize Korean query and match aliases
+    Tax-->>API: Canonical topics, aliases, filters
+    API->>BR: Embed query with search_query input type
+    API->>Store: Search tagged passages first
+    Store-->>API: Retrieved chunks with page spans
+    API->>Store: Broader hybrid fallback if needed
+    API->>BR: Generate answer from retrieved context only
+    API-->>UI: Answer, citations, source passages, request_id
+```
+
+The answer path is grounded by design. If retrieval returns weak or empty context, the API should not ask the model to invent an answer.
 
 ## Ingestion Flow
 
-1. Walk `./pdfs` once during a manual run.
-2. Upload each raw PDF to S3.
-3. Extract embedded text with PyMuPDF, preserving page boundaries.
-4. Fall back to local Korean OCR when extraction is too short or garbled.
-5. Save page JSON and Markdown artifacts to S3.
-6. Detect title/date from filename and first page.
-7. Chunk text using Korean-aware token estimates and page ranges.
-8. Store page-specific spans inside each chunk so citations can point to exact page excerpts.
-9. Embed document chunks with `input_type="search_document"`.
-10. Write `vector-index/chunks.json.gz` with chunk metadata and embeddings.
-11. Write `metadata/documents.json`, local `ingestion_report.json`, and S3 `ingestion-reports/ingestion_report.json`.
+```mermaid
+flowchart LR
+    PDFs["Local PDFs"] --> Upload["Upload raw PDFs to S3"]
+    Upload --> Extract["Extract embedded text with PyMuPDF"]
+    Extract --> OCR{"Text quality OK?"}
+    OCR -- no --> OCRFallback["Try Korean OCR\nPaddleOCR or Tesseract"]
+    OCR -- yes --> Pages["Page JSON and Markdown"]
+    OCRFallback --> Pages
+    Pages --> Chunk["Korean-aware chunking\npage spans preserved"]
+    Chunk --> Embed["Bedrock multilingual embeddings"]
+    Embed --> Bundle["chunks.json.gz\nS3 vector bundle"]
+    Chunk --> Taxonomy["Deterministic alias tagging"]
+    Taxonomy --> Report["ingestion_report.json\ntaxonomy_report.json"]
+    Taxonomy --> DB["Optional Postgres upsert"]
+```
+
+The corpus is manually ingested. There are no crawlers, recurring jobs, or scheduled data pulls.
+
+## Data Model
+
+The structured schema lives in `backend/app/db_models.py` and is migrated by Alembic. It includes:
+
+- `documents`, `articles`, `pages`, `passages`
+- `topics`, `topic_aliases`, `body_systems`
+- `foods`, `conditions`, `symptoms`, `substances`, `habits`
+- `passage_topic_assignments`, `retrieval_logs`
+
+Each passage keeps citation and review metadata such as `document_id`, `article_id`, `page_start`, `page_end`, `section_heading`, `original_korean_text`, category tags, `topic_slugs`, `confidence_score`, `needs_human_review`, source S3 keys, `embedding_id`, and `chunk_id`.
 
 ## Source Traceability
 
-Every chunk stores:
+Chunks and citations are page-aware. Returned citations include, where available:
 
-- `chunk_id`
-- `document_id`
-- `filename`
-- `title`
-- `detected_date`
-- `page_start`
-- `page_end`
-- `page_numbers`
-- `page_spans`
-- `section_title`
-- `language`
-- `text`
-- `source_s3_key`
-- `pdf_s3_key`
-- `extraction_method`
-- `token_count`
+- PDF filename
+- document title
+- detected date
+- page start and end
+- section heading
+- original Korean quote
+- document and chunk identifiers
+- signed PDF URL
 
-The API returns citations with PDF signed URLs and source snippets.
+## OpenSearch Boundary
+
+OpenSearch is optional. The default Terraform does not provision it because this is a low-volume archive. `scripts/reindex_with_taxonomy.py` can write local mapping and reindex plans without a live endpoint, or target an existing endpoint when `OPENSEARCH_ENDPOINT` is configured.
+
+When Nori is available, mappings use a Korean analyzer. When it is not available, the mapping falls back to standard analysis plus keyword fields and alias expansion.
+
+## Deployment Boundary
+
+Cloudflare Pages hosts the static frontend. The backend is intentionally decoupled and can run locally or on an on-demand runtime. Terraform creates private S3 storage and IAM policies only; it does not create an always-on API host.
