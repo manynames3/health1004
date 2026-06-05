@@ -52,15 +52,15 @@ export function ResolveSearchPanel() {
       {resolved && (
         <div className="resolver-results">
           <div>
-            <span>matched topics</span>
+            <span>일치한 주제</span>
             <strong>{resolved.matched_topics.length ? resolved.matched_topics.join(", ") : "일치 항목 없음"}</strong>
           </div>
           <div>
-            <span>related aliases</span>
+            <span>관련 표현</span>
             <strong>{resolved.expanded_aliases.slice(0, 10).join(", ") || "별칭 없음"}</strong>
           </div>
           <div>
-            <span>suggested categories</span>
+            <span>추천 분류</span>
             <strong>{resolved.matched_body_systems.join(", ") || "전체 아카이브"}</strong>
           </div>
           <div className="resolver-actions">

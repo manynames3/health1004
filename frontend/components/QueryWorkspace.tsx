@@ -6,9 +6,9 @@ import { askQuestion } from "../lib/api";
 import { QueryResponse, RetrievedChunk } from "../types";
 
 const EXAMPLE_QUESTIONS = [
-  "수면에 대해 문서에서는 무엇을 말하나요?",
-  "혈당 관리와 식습관 관련 내용을 찾아줘",
-  "What do the newsletters say about vitamin D?"
+  "우유와 골다공증에 대해 뭐라고 하나요?",
+  "대장암과 고기 섭취의 관계를 찾아줘.",
+  "방부제에 대해 나온 자료를 정리해줘."
 ];
 
 export function QueryWorkspace() {
@@ -48,19 +48,19 @@ export function QueryWorkspace() {
       <form className="query-panel" onSubmit={onSubmit}>
         <div className="query-heading">
           <div>
-            <p className="eyebrow">검색 / 질문</p>
+            <p className="eyebrow">원문 질문</p>
             <h2>원문 기반 요약</h2>
           </div>
           <div className="model-note">
             <ShieldCheck size={16} aria-hidden="true" />
-            citations required
+            출처 필수
           </div>
         </div>
 
         <textarea
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="문서에 대해 질문하세요. Korean or English 모두 가능합니다."
+          placeholder="원문 자료에 대해 질문하세요. 예: 속이 안 좋고 소화가 안돼요"
           rows={5}
         />
 
@@ -70,7 +70,7 @@ export function QueryWorkspace() {
             <select value={topK} onChange={(event) => setTopK(Number(event.target.value))}>
               {[4, 6, 8, 10, 12, 16].map((value) => (
                 <option value={value} key={value}>
-                  top {value}
+                  최대 {value}개
                 </option>
               ))}
             </select>
@@ -93,8 +93,8 @@ export function QueryWorkspace() {
       <div className="disclaimer">
         <AlertTriangle size={18} aria-hidden="true" />
         <p>
-          This system summarizes uploaded documents and is not medical advice. Consult a qualified professional for
-          medical decisions.
+          이 기능은 업로드된 원문을 요약해 보여주는 교육용 아카이브입니다. 진단, 처방, 치료 계획이
+          필요하거나 증상이 급한 경우에는 자격을 갖춘 의료 전문가와 상담하세요.
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export function QueryWorkspace() {
             <p className="eyebrow">답변</p>
             <h2 id="answer-title">근거 기반 요약</h2>
           </div>
-          <span className="count-pill">{citationCount} citations</span>
+          <span className="count-pill">인용 {citationCount}개</span>
         </div>
 
         {!response && !loading && (
@@ -119,7 +119,7 @@ export function QueryWorkspace() {
         {loading && (
           <div className="empty-answer">
             <Loader2 className="spin" size={24} aria-hidden="true" />
-            Bedrock과 문서 벡터 묶음에서 근거를 확인하는 중입니다.
+            관련 원문과 인용 가능한 출처를 확인하는 중입니다.
           </div>
         )}
 
@@ -134,7 +134,7 @@ export function QueryWorkspace() {
             )}
             {response.resolved_query && (
               <div className="resolved-strip">
-                <span>resolved topics</span>
+                <span>해석된 주제</span>
                 <strong>{response.resolved_query.matched_topics.join(", ") || "전체 아카이브"}</strong>
               </div>
             )}
@@ -211,7 +211,7 @@ function RetrievedSources({ chunks }: { chunks: RetrievedChunk[] }) {
                   {chunk.section_title ? `${chunk.section_title} · ` : ""}
                   {chunk.filename} · p.
                   {chunk.page_start === chunk.page_end ? chunk.page_start : `${chunk.page_start}-${chunk.page_end}`} ·{" "}
-                  score {chunk.score.toFixed(3)}
+                  관련도 {chunk.score.toFixed(3)}
                 </small>
               </span>
               <ChevronDown size={18} aria-hidden="true" />

@@ -102,6 +102,13 @@ export interface DocumentSummary {
   checksum?: string | null;
 }
 
+export interface DocumentListResponse {
+  documents: DocumentSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface TopicSummary {
   slug: string;
   title: string;

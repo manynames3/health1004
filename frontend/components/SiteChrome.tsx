@@ -15,9 +15,6 @@ export function SiteHeader() {
         <Link href="/archive/">원문 PDF</Link>
         <Link href="/ask/">AI 질문</Link>
         <Link href="/author/">저자</Link>
-        <Link className="admin-nav-link" href="/admin/">
-          관리자
-        </Link>
       </nav>
     </header>
   );

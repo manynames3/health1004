@@ -22,6 +22,15 @@ const homeCards = [
   { href: "/ask/", title: "AI에게 질문하기", icon: MessageSquareText }
 ];
 
+const featuredTopics = [
+  { href: "/topics/milk/", title: "우유", label: "골다공증, 유제품" },
+  { href: "/topics/meat/", title: "고기", label: "대장암, 육류" },
+  { href: "/topics/preservative/", title: "방부제", label: "보존료, 첨가물" },
+  { href: "/topics/soda/", title: "탄산음료", label: "칼슘, 인 비율" },
+  { href: "/topics/garlic/", title: "마늘", label: "음식/식재료" },
+  { href: "/topics/constipation/", title: "변비", label: "소화/장" }
+];
+
 export function LandingPage() {
   return (
     <main className="archive-shell home">
@@ -51,6 +60,21 @@ export function LandingPage() {
             </Link>
           );
         })}
+      </section>
+
+      <section className="featured-topic-strip" aria-labelledby="featured-topics-title">
+        <div>
+          <p className="eyebrow">자주 찾는 원문 주제</p>
+          <h2 id="featured-topics-title">먼저 살펴볼 주제</h2>
+        </div>
+        <div className="featured-topic-links">
+          {featuredTopics.map((topic) => (
+            <Link href={topic.href} key={topic.href}>
+              <strong>{topic.title}</strong>
+              <span>{topic.label}</span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <ResolveSearchPanel />

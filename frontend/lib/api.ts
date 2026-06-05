@@ -2,6 +2,7 @@ import {
   AdminIngestResponse,
   AdminReviewTagResponse,
   AdminStatus,
+  DocumentListResponse,
   DocumentSummary,
   PassageListResponse,
   QueryResponse,
@@ -28,15 +29,31 @@ export async function askQuestion(question: string, topK: number): Promise<Query
   return response.json();
 }
 
-export async function fetchDocuments(): Promise<DocumentSummary[]> {
+export async function fetchDocuments({
+  query = "",
+  limit = 25,
+  offset = 0
+}: {
+  query?: string;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<DocumentListResponse> {
   ensureApiConfigured();
-  const response = await fetch(`${API_BASE_URL}/documents`, { cache: "no-store" });
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (query.trim()) params.set("q", query.trim());
+  const response = await fetch(`${API_BASE_URL}/documents?${params}`, { cache: "no-store" });
   if (!response.ok) {
     const detail = await readError(response);
     throw new Error(detail || `Document fetch failed with status ${response.status}`);
   }
   const payload = await response.json();
-  return payload.documents || [];
+  const documents = payload.documents || [];
+  return {
+    documents,
+    total: typeof payload.total === "number" ? payload.total : documents.length,
+    limit: typeof payload.limit === "number" ? payload.limit : limit,
+    offset: typeof payload.offset === "number" ? payload.offset : offset
+  };
 }
 
 export async function fetchDocument(documentId: string): Promise<DocumentSummary> {

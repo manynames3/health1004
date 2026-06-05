@@ -128,6 +128,9 @@ class DocumentDetail(DocumentSummary):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentSummary]
+    total: int = 0
+    limit: int = 0
+    offset: int = 0
 
 
 class TopicSummary(BaseModel):

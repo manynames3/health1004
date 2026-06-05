@@ -75,7 +75,7 @@ export function CategoryBrowser({
             <h2>{topic.title}</h2>
             {topic.english_title && <p>{topic.english_title}</p>}
             <small>{topic.aliases.slice(0, 5).join(", ")}</small>
-            <strong>{topic.source_count.toLocaleString()} sources</strong>
+            <strong>원문 조각 {topic.source_count.toLocaleString()}개</strong>
           </Link>
         ))}
       </div>

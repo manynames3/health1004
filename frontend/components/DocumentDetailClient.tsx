@@ -43,12 +43,12 @@ export function DocumentDetailClient({ documentId }: { documentId: string }) {
         <div>
           <dt>페이지 / 조각</dt>
           <dd>
-            {document.page_count} pages · {document.chunk_count} chunks
+            {document.page_count}쪽 · 원문 조각 {document.chunk_count}개
           </dd>
         </div>
         <div>
           <dt>추출 방식</dt>
-          <dd>{document.extraction_method || "unknown"}</dd>
+          <dd>{document.extraction_method || "미상"}</dd>
         </div>
       </dl>
       {document.pdf_url && (

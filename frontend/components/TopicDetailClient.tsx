@@ -50,7 +50,7 @@ export function TopicDetailClient({ slug }: { slug: string }) {
         </div>
 
         <section>
-          <h2>Top source passages</h2>
+          <h2>주요 원문 조각</h2>
           <div className="passage-list">
             {topic.source_passages.length === 0 && <div className="empty-state">아직 태그된 원문 조각이 없습니다.</div>}
             {topic.source_passages.map((passage) => (
@@ -75,17 +75,17 @@ export function TopicDetailClient({ slug }: { slug: string }) {
 
       <aside className="topic-side-panel">
         <section>
-          <h2>Related topics</h2>
+          <h2>관련 주제</h2>
           {topic.related_topics.length === 0 && <p>관련 주제는 태깅 후 표시됩니다.</p>}
           {topic.related_topics.map((related) => (
             <Link href={`/topics/${related.slug}/`} key={related.slug}>
               {related.title}
-              <small>{related.source_count} sources</small>
+              <small>원문 조각 {related.source_count}개</small>
             </Link>
           ))}
         </section>
         <section>
-          <h2>Related documents</h2>
+          <h2>관련 원문 PDF</h2>
           {topic.related_documents.length === 0 && <p>관련 문서는 태깅 후 표시됩니다.</p>}
           {topic.related_documents.map((doc) => (
             <article key={doc.document_id}>

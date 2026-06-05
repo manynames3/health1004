@@ -10,6 +10,7 @@ from fastapi import (
     Form,
     Header,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
@@ -343,18 +344,34 @@ def query(request: QueryRequest) -> QueryResponse:
 
 
 @app.get("/documents", response_model=DocumentListResponse)
-def documents() -> DocumentListResponse:
+def documents(
+    q: str | None = None,
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> DocumentListResponse:
     try:
         storage = S3Storage(settings)
         manifest = storage.documents_manifest()
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    docs = []
+
+    docs: list[DocumentSummary] = []
+    needle = (q or "").strip().lower()
     for document in manifest.get("documents", {}).values():
-        enriched = {**document, "pdf_url": storage.presign_pdf(document.get("pdf_s3_key"))}
-        docs.append(DocumentSummary(**enriched))
+        if needle:
+            haystack = " ".join(
+                str(document.get(field) or "")
+                for field in ("title", "filename", "detected_date", "series", "volume", "lesson_number")
+            ).lower()
+            if needle not in haystack:
+                continue
+        docs.append(DocumentSummary(**document_list_payload(document)))
     docs.sort(key=lambda document: (document.detected_date or "", document.title), reverse=True)
-    return DocumentListResponse(documents=docs)
+    total = len(docs)
+    page = docs[offset : offset + limit]
+    for document in page:
+        document.pdf_url = storage.presign_pdf(document.pdf_s3_key)
+    return DocumentListResponse(documents=page, total=total, limit=limit, offset=offset)
 
 
 @app.get("/documents/{document_id}", response_model=DocumentDetail)
@@ -368,3 +385,21 @@ def document_detail(document_id: str) -> DocumentDetail:
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return DocumentDetail(**{**document, "pdf_url": storage.presign_pdf(document.get("pdf_s3_key"))})
+
+
+def document_list_payload(document: dict) -> dict:
+    return {
+        "document_id": document.get("document_id"),
+        "title": document.get("title") or document.get("filename") or "Untitled document",
+        "filename": document.get("filename") or "",
+        "detected_date": document.get("detected_date"),
+        "language": document.get("language") or "unknown",
+        "page_count": document.get("page_count") or 0,
+        "chunk_count": document.get("chunk_count") or 0,
+        "extraction_method": document.get("extraction_method"),
+        "series": document.get("series"),
+        "volume": document.get("volume"),
+        "lesson_number": document.get("lesson_number"),
+        "pdf_s3_key": document.get("pdf_s3_key"),
+        "checksum": document.get("checksum"),
+    }
