@@ -111,7 +111,7 @@ export function QueryWorkspace() {
         {loading && (
           <div className="empty-answer">
             <Loader2 className="spin" size={24} aria-hidden="true" />
-            Bedrock과 OpenSearch에서 근거를 확인하는 중입니다.
+            Bedrock과 문서 벡터 묶음에서 근거를 확인하는 중입니다.
           </div>
         )}
 

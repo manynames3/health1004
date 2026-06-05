@@ -10,10 +10,8 @@ class Settings(BaseSettings):
 
     aws_region: str = Field(default="", alias="AWS_REGION")
     s3_bucket: str = Field(default="", alias="S3_BUCKET")
-    opensearch_endpoint: str = Field(default="", alias="OPENSEARCH_ENDPOINT")
-    opensearch_index: str = Field(default="korean-health-chunks", alias="OPENSEARCH_INDEX")
-    opensearch_service: str = Field(default="aoss", alias="OPENSEARCH_SERVICE")
-    opensearch_vector_dimension: int = Field(default=1024, alias="OPENSEARCH_VECTOR_DIMENSION")
+    vector_bundle_key: str = Field(default="vector-index/chunks.json.gz", alias="VECTOR_BUNDLE_KEY")
+    vector_dimension: int = Field(default=1024, alias="VECTOR_DIMENSION")
 
     bedrock_embed_model_id: str = Field(
         default="cohere.embed-multilingual-v3", alias="BEDROCK_EMBED_MODEL_ID"
@@ -43,7 +41,7 @@ class Settings(BaseSettings):
             for name, value in {
                 "AWS_REGION": self.aws_region,
                 "S3_BUCKET": self.s3_bucket,
-                "OPENSEARCH_ENDPOINT": self.opensearch_endpoint,
+                "VECTOR_BUNDLE_KEY": self.vector_bundle_key,
             }.items()
             if not value
         ]

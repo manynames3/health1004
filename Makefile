@@ -10,7 +10,7 @@ frontend:
 	cd frontend && npm run dev
 
 ingest:
-	python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/ --rebuild-index
+	python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/
 
 eval:
 	python scripts/evaluate_retrieval.py --top-k 5

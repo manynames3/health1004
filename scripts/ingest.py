@@ -24,19 +24,23 @@ from app.extraction import (
 )
 from app.language import detect_language
 from app.logging_config import configure_logging
-from app.opensearch_client import ensure_vector_index, make_opensearch_client, upsert_chunks
 from app.s3_store import S3Storage
+from app.vector_bundle import build_vector_bundle, make_vector_record, parse_vector_bundle
 
 logger = logging.getLogger("ingest")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Manually ingest a local directory of Korean/English PDF newsletters into S3 and OpenSearch."
+        description="Manually ingest a local directory of Korean/English PDF newsletters into S3 vector artifacts."
     )
     parser.add_argument("--pdf-dir", default="./pdfs", help="Local directory containing PDF files")
     parser.add_argument("--s3-prefix", default="raw-pdfs/", help="S3 prefix for raw PDFs")
-    parser.add_argument("--rebuild-index", action="store_true", help="Create the OpenSearch index if missing")
+    parser.add_argument(
+        "--vector-bundle-key",
+        default=None,
+        help="S3 key for the compressed vector bundle. Defaults to VECTOR_BUNDLE_KEY.",
+    )
     parser.add_argument("--force", action="store_true", help="Reprocess PDFs even when checksum matches")
     parser.add_argument("--limit", type=int, default=0, help="Optional max PDF count for smoke testing")
     parser.add_argument(
@@ -62,6 +66,7 @@ def main() -> int:
         pdf_paths = pdf_paths[: args.limit]
 
     storage = S3Storage(settings)
+    vector_bundle_key = args.vector_bundle_key or settings.vector_bundle_key
     manifest = storage.documents_manifest()
     manifest.setdefault("documents", {})
     checksum_to_document = {
@@ -70,9 +75,12 @@ def main() -> int:
         if doc.get("checksum")
     }
 
-    os_client = make_opensearch_client(settings)
-    if args.rebuild_index:
-        ensure_vector_index(os_client, settings.opensearch_index, settings.opensearch_vector_dimension)
+    existing_vector_records = load_existing_vector_records(storage, vector_bundle_key)
+    vector_records_by_doc: dict[str, list[dict[str, Any]]] = {}
+    for record in existing_vector_records:
+        document_id = record.get("chunk", {}).get("document_id")
+        if document_id:
+            vector_records_by_doc.setdefault(document_id, []).append(record)
 
     bedrock = BedrockRuntime(settings)
     started_at = datetime.now(timezone.utc).isoformat()
@@ -85,9 +93,9 @@ def main() -> int:
         "settings": {
             "aws_region": settings.aws_region,
             "s3_bucket": settings.s3_bucket,
-            "opensearch_index": settings.opensearch_index,
             "embedding_model": settings.bedrock_embed_model_id,
-            "vector_dimension": settings.opensearch_vector_dimension,
+            "vector_dimension": settings.vector_dimension,
+            "vector_bundle_key": vector_bundle_key,
         },
         "total_pdfs": len(pdf_paths),
         "successful_pdfs": 0,
@@ -113,9 +121,9 @@ def main() -> int:
                 settings=settings,
                 storage=storage,
                 bedrock=bedrock,
-                os_client=os_client,
                 manifest=manifest,
                 checksum_to_document=checksum_to_document,
+                vector_records_by_doc=vector_records_by_doc,
                 report=report,
             )
             report["files"].append(file_report)
@@ -131,6 +139,26 @@ def main() -> int:
             report["files"].append(error_payload)
 
     report["completed_at"] = datetime.now(timezone.utc).isoformat()
+    all_vector_records = [
+        record for records in vector_records_by_doc.values() for record in records
+    ]
+    vector_payload = build_vector_bundle(
+        records=all_vector_records,
+        embedding_model_id=settings.bedrock_embed_model_id,
+        embedding_dimension=settings.vector_dimension,
+        created_at=report["completed_at"],
+    )
+    storage.put_bytes(
+        vector_bundle_key,
+        vector_payload,
+        content_type="application/json",
+        content_encoding="gzip",
+    )
+    report["vector_bundle"] = {
+        "s3_key": vector_bundle_key,
+        "record_count": len(all_vector_records),
+        "bytes_gzipped": len(vector_payload),
+    }
     report_key = f"{settings.reports_prefix.rstrip('/')}/ingestion_report.json"
     storage.put_json(settings.metadata_key, manifest)
     storage.put_json(report_key, report)
@@ -148,14 +176,15 @@ def process_pdf(
     settings,
     storage: S3Storage,
     bedrock: BedrockRuntime,
-    os_client,
     manifest: dict[str, Any],
     checksum_to_document: dict[str, str],
+    vector_records_by_doc: dict[str, list[dict[str, Any]]],
     report: dict[str, Any],
 ) -> dict[str, Any]:
     checksum = sha256_file(pdf_path)
     existing_doc_id = checksum_to_document.get(checksum)
-    if existing_doc_id and not force:
+    existing_vectors = bool(existing_doc_id and vector_records_by_doc.get(existing_doc_id))
+    if existing_doc_id and not force and existing_vectors:
         logger.info("Skipping unchanged PDF: %s", pdf_path.name)
         return {
             "filename": pdf_path.name,
@@ -163,9 +192,12 @@ def process_pdf(
             "status": "skipped",
             "reason": "checksum_unchanged",
             "checksum": checksum,
+            "vector_records": len(vector_records_by_doc[existing_doc_id]),
         }
+    if existing_doc_id and not force:
+        logger.info("Reprocessing unchanged PDF without vector records: %s", pdf_path.name)
 
-    document_id = make_document_id(pdf_path.name, checksum)
+    document_id = existing_doc_id or make_document_id(pdf_path.name, checksum)
     pdf_s3_key = f"{raw_prefix.rstrip('/')}/{pdf_path.name}"
     extracted_json_key = f"{settings.extracted_prefix.rstrip('/')}/{document_id}/pages.json"
     extracted_markdown_key = f"{settings.extracted_prefix.rstrip('/')}/{document_id}/pages.md"
@@ -215,14 +247,10 @@ def process_pdf(
     )
     chunk_dicts = [chunk.to_dict() for chunk in chunks]
     embeddings = bedrock.embed_texts([chunk["text"] for chunk in chunk_dicts], input_type="search_document")
-    success_count, errors = upsert_chunks(
-        os_client,
-        index_name=settings.opensearch_index,
-        chunks=chunk_dicts,
-        embeddings=embeddings,
-    )
-    if errors:
-        raise RuntimeError(f"OpenSearch bulk upsert had errors: {errors[:3]}")
+    vector_records_by_doc[document_id] = [
+        make_vector_record(chunk, embedding)
+        for chunk, embedding in zip(chunk_dicts, embeddings)
+    ]
 
     manifest["documents"][document_id] = {
         "document_id": document_id,
@@ -254,7 +282,12 @@ def process_pdf(
     report["pages_processed"] += len(pages)
     report["chunks_created"] += len(chunks)
     report["extraction_method_per_file"][pdf_path.name] = extraction_method
-    logger.info("Ingested %s with %s chunks (%s upserted)", pdf_path.name, len(chunks), success_count)
+    logger.info(
+        "Ingested %s with %s chunks (%s vector records)",
+        pdf_path.name,
+        len(chunks),
+        len(vector_records_by_doc[document_id]),
+    )
     return {
         "filename": pdf_path.name,
         "document_id": document_id,
@@ -262,13 +295,32 @@ def process_pdf(
         "checksum": checksum,
         "page_count": len(pages),
         "chunk_count": len(chunks),
-        "chunks_upserted": success_count,
+        "vector_records": len(vector_records_by_doc[document_id]),
         "extraction_method": extraction_method,
         "extraction_diagnostics": diagnostics,
         "pdf_s3_key": pdf_s3_key,
         "extracted_json_s3_key": extracted_json_key,
         "extracted_markdown_s3_key": extracted_markdown_key,
     }
+
+
+def load_existing_vector_records(storage: S3Storage, key: str) -> list[dict[str, Any]]:
+    payload = storage.get_bytes(key)
+    if payload is None:
+        return []
+    try:
+        bundle = parse_vector_bundle(payload)
+    except Exception as exc:
+        logger.warning("Could not load existing vector bundle %s: %s", key, exc)
+        return []
+    return [
+        {
+            "chunk": record.chunk,
+            "embedding": record.embedding,
+            "embedding_norm": record.embedding_norm,
+        }
+        for record in bundle.records
+    ]
 
 
 def extract_pages(pdf_path: Path) -> tuple[list[PageText], str, dict[str, Any]]:

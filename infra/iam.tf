@@ -1,84 +1,92 @@
-data "aws_iam_policy_document" "apprunner_task_assume" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["tasks.apprunner.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
+locals {
+  bedrock_embed_model_arn = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embed_model_id}"
+  bedrock_chat_model_arn  = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_chat_model_id}"
+  bedrock_profile_arn     = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/*"
 }
 
-resource "aws_iam_role" "backend_task" {
-  name               = "${local.name_prefix}-backend-task"
-  assume_role_policy = data.aws_iam_policy_document.apprunner_task_assume.json
-}
-
-data "aws_iam_policy_document" "backend_task" {
+data "aws_iam_policy_document" "ingestion" {
   statement {
-    sid    = "ReadCorpusArtifacts"
+    sid    = "ListCorpusBucket"
     effect = "Allow"
     actions = [
-      "s3:GetObject",
       "s3:ListBucket"
     ]
     resources = [
-      aws_s3_bucket.corpus.arn,
+      aws_s3_bucket.corpus.arn
+    ]
+  }
+
+  statement {
+    sid    = "WriteCorpusArtifacts"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = [
       "${aws_s3_bucket.corpus.arn}/*"
     ]
   }
 
   statement {
-    sid    = "InvokeConfiguredBedrockModels"
+    sid    = "InvokeEmbeddingModel"
     effect = "Allow"
     actions = [
-      "bedrock:InvokeModel",
-      "bedrock:Converse"
+      "bedrock:InvokeModel"
     ]
     resources = [
-      "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embed_model_id}",
-      "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_chat_model_id}",
-      "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/*"
+      local.bedrock_embed_model_arn
     ]
   }
+}
 
+resource "aws_iam_policy" "ingestion" {
+  name        = "${local.name_prefix}-ingestion"
+  description = "Manual ingestion access for the ${var.project_name} Korean PDF corpus."
+  policy      = data.aws_iam_policy_document.ingestion.json
+}
+
+data "aws_iam_policy_document" "runtime" {
   statement {
-    sid    = "OpenSearchServerlessApi"
+    sid    = "ListCorpusBucket"
     effect = "Allow"
     actions = [
-      "aoss:APIAccessAll"
+      "s3:ListBucket"
     ]
-    resources = [aws_opensearchserverless_collection.vector.arn]
+    resources = [
+      aws_s3_bucket.corpus.arn
+    ]
   }
-}
 
-resource "aws_iam_policy" "backend_task" {
-  name   = "${local.name_prefix}-backend-task"
-  policy = data.aws_iam_policy_document.backend_task.json
-}
-
-resource "aws_iam_role_policy_attachment" "backend_task" {
-  role       = aws_iam_role.backend_task.name
-  policy_arn = aws_iam_policy.backend_task.arn
-}
-
-data "aws_iam_policy_document" "apprunner_ecr_assume" {
   statement {
+    sid    = "ReadCorpusArtifacts"
     effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["build.apprunner.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = [
+      "${aws_s3_bucket.corpus.arn}/*"
+    ]
+  }
+
+  statement {
+    sid    = "InvokeAnswerModels"
+    effect = "Allow"
+    actions = [
+      "bedrock:Converse",
+      "bedrock:InvokeModel"
+    ]
+    resources = [
+      local.bedrock_embed_model_arn,
+      local.bedrock_chat_model_arn,
+      local.bedrock_profile_arn
+    ]
   }
 }
 
-resource "aws_iam_role" "apprunner_ecr_access" {
-  name               = "${local.name_prefix}-apprunner-ecr"
-  assume_role_policy = data.aws_iam_policy_document.apprunner_ecr_assume.json
-}
-
-resource "aws_iam_role_policy_attachment" "apprunner_ecr_access" {
-  role       = aws_iam_role.apprunner_ecr_access.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
+resource "aws_iam_policy" "runtime" {
+  name        = "${local.name_prefix}-runtime"
+  description = "Runtime read and Bedrock access for the ${var.project_name} Korean PDF RAG API."
+  policy      = data.aws_iam_policy_document.runtime.json
 }

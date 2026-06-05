@@ -47,7 +47,7 @@ def health() -> HealthResponse:
         status="ok",
         aws_region_configured=bool(settings.aws_region),
         s3_configured=bool(settings.s3_bucket),
-        opensearch_configured=bool(settings.opensearch_endpoint),
+        vector_bundle_configured=bool(settings.vector_bundle_key),
         chat_model_configured=bool(settings.bedrock_chat_model_id),
     )
 

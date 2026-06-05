@@ -1,14 +1,11 @@
 # Terraform
 
-This Terraform creates the AWS-native production skeleton:
+This Terraform is intentionally low-cost for a low-volume maintenance site. It creates only:
 
-- S3 corpus bucket for raw PDFs, extracted text, metadata, and ingestion reports.
-- OpenSearch Serverless `VECTORSEARCH` collection.
-- ECR repository and App Runner service for the FastAPI container.
-- IAM roles and data-access policies for Bedrock, S3, and OpenSearch.
-- Private S3 bucket plus CloudFront distribution for the static Next.js frontend.
+- One private S3 corpus bucket for raw PDFs, extracted text, metadata, ingestion reports, and `vector-index/chunks.json.gz`.
+- Two attachable IAM policies: one for manual ingestion and one for an optional AWS-hosted runtime.
 
-The OpenSearch vector index is intentionally created by `scripts/ingest.py --rebuild-index` so the mapping always matches `OPENSEARCH_VECTOR_DIMENSION`.
+It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on compute. The public frontend is expected to stay on Cloudflare Pages.
 
 ## Apply
 
@@ -16,8 +13,7 @@ The OpenSearch vector index is intentionally created by `scripts/ingest.py --reb
 terraform init
 terraform apply \
   -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=anthropic.claude-3-5-sonnet-20241022-v2:0" \
-  -var='ingestion_principal_arns=["arn:aws:iam::<account-id>:user/<you>"]'
+  -var="bedrock_chat_model_id=anthropic.claude-3-5-sonnet-20241022-v2:0"
 ```
 
-Before creating the App Runner service, push an image tagged `latest` to the output ECR repository, or pass `backend_image_identifier`.
+After apply, attach `ingestion_policy_arn` to the IAM principal that runs `scripts/ingest.py`. If you later host the FastAPI backend on AWS Lambda or another on-demand AWS runtime, attach `runtime_policy_arn` to that runtime role.

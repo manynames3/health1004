@@ -85,5 +85,5 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     aws_region_configured: bool
     s3_configured: bool
-    opensearch_configured: bool
+    vector_bundle_configured: bool
     chat_model_configured: bool

@@ -6,8 +6,8 @@ from app.citations import citation_from_chunk, dedupe_citations
 from app.config import Settings
 from app.language import detect_language
 from app.models import QueryRequest, QueryResponse
-from app.opensearch_client import make_opensearch_client, search_chunks
 from app.s3_store import S3Storage
+from app.vector_bundle import VectorBundleStore
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +23,11 @@ class RAGService:
 
         language = detect_language(request.question)
         bedrock = BedrockRuntime(self.settings)
-        os_client = make_opensearch_client(self.settings)
         storage = S3Storage(self.settings)
+        vector_store = VectorBundleStore(self.settings, storage)
 
         embeddings = bedrock.embed_texts([request.question], input_type="search_query")
-        chunks = search_chunks(
-            os_client,
-            index_name=self.settings.opensearch_index,
+        chunks = vector_store.search(
             query=request.question,
             query_embedding=embeddings[0],
             top_k=request.top_k,

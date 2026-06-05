@@ -2,10 +2,10 @@
 
 ## Components
 
-- Frontend: static Next.js app hosted on S3 and CloudFront.
-- Backend: FastAPI container on App Runner.
+- Frontend: static Next.js app hosted on Cloudflare Pages.
+- Backend: FastAPI app that can run locally or on low-cost on-demand compute.
 - Corpus storage: S3 bucket with raw PDFs, extracted JSON/Markdown, metadata, and ingestion reports.
-- Vector store: Amazon OpenSearch Serverless vector collection.
+- Vector store: gzipped S3 vector bundle loaded and cached by the backend for exact search.
 - Models: Amazon Bedrock Cohere Embed Multilingual for embeddings and a configurable Bedrock chat model for answers.
 
 ## Query Flow
@@ -13,7 +13,7 @@
 1. Frontend posts a question to `/query`.
 2. Backend detects Korean, English, mixed, or unknown language.
 3. Backend embeds the query with `input_type="search_query"`.
-4. Backend retrieves OpenSearch chunks by vector similarity and keyword search.
+4. Backend retrieves chunks from the cached S3 vector bundle by vector similarity and keyword scoring.
 5. Backend sends retrieved context and citation metadata to Bedrock Converse.
 6. Backend returns answer, citations, retrieved chunks, warnings, and request id.
 
@@ -28,7 +28,7 @@
 7. Chunk text using Korean-aware token estimates and page ranges.
 8. Store page-specific spans inside each chunk so citations can point to exact page excerpts.
 9. Embed document chunks with `input_type="search_document"`.
-10. Upsert chunks into OpenSearch.
+10. Write `vector-index/chunks.json.gz` with chunk metadata and embeddings.
 11. Write `metadata/documents.json`, local `ingestion_report.json`, and S3 `ingestion-reports/ingestion_report.json`.
 
 ## Source Traceability

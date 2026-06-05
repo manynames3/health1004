@@ -33,6 +33,32 @@ class S3Storage:
             ContentType="application/json; charset=utf-8",
         )
 
+    def get_bytes(self, key: str) -> Optional[bytes]:
+        try:
+            response = self.client.get_object(Bucket=self.settings.s3_bucket, Key=key)
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {"NoSuchKey", "404"}:
+                return None
+            raise
+        return response["Body"].read()
+
+    def put_bytes(
+        self,
+        key: str,
+        payload: bytes,
+        content_type: str = "application/octet-stream",
+        content_encoding: str | None = None,
+    ) -> None:
+        extra_args: dict[str, Any] = {
+            "Bucket": self.settings.s3_bucket,
+            "Key": key,
+            "Body": payload,
+            "ContentType": content_type,
+        }
+        if content_encoding:
+            extra_args["ContentEncoding"] = content_encoding
+        self.client.put_object(**extra_args)
+
     def put_text(self, key: str, text: str, content_type: str = "text/plain; charset=utf-8") -> None:
         self.client.put_object(
             Bucket=self.settings.s3_bucket,

@@ -1,27 +1,24 @@
 output "corpus_bucket" {
-  value = aws_s3_bucket.corpus.bucket
+  description = "Private S3 bucket for PDFs, extracted text, metadata, reports, and the vector bundle."
+  value       = aws_s3_bucket.corpus.bucket
 }
 
-output "frontend_bucket" {
-  value = aws_s3_bucket.frontend.bucket
+output "metadata_key" {
+  description = "S3 key used by the backend for the document manifest."
+  value       = var.metadata_key
 }
 
-output "frontend_url" {
-  value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+output "vector_bundle_key" {
+  description = "S3 key used by ingestion and retrieval for exact vector search."
+  value       = var.vector_bundle_key
 }
 
-output "backend_url" {
-  value = aws_apprunner_service.backend.service_url
+output "ingestion_policy_arn" {
+  description = "Attach this policy to the IAM principal that runs scripts/ingest.py."
+  value       = aws_iam_policy.ingestion.arn
 }
 
-output "backend_ecr_repository_url" {
-  value = aws_ecr_repository.backend.repository_url
-}
-
-output "opensearch_collection_endpoint" {
-  value = aws_opensearchserverless_collection.vector.collection_endpoint
-}
-
-output "opensearch_index" {
-  value = var.opensearch_index_name
+output "runtime_policy_arn" {
+  description = "Attach this policy to the API runtime if hosted on AWS."
+  value       = aws_iam_policy.runtime.arn
 }

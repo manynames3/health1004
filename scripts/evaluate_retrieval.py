@@ -11,7 +11,8 @@ from app.citations import format_pages
 from app.config import get_settings
 from app.language import detect_language
 from app.logging_config import configure_logging
-from app.opensearch_client import make_opensearch_client, search_chunks
+from app.s3_store import S3Storage
+from app.vector_bundle import VectorBundleStore
 
 
 DEFAULT_QUESTIONS = [
@@ -50,14 +51,13 @@ def main() -> int:
 
     questions = load_questions(args.questions_file)
     bedrock = BedrockRuntime(settings)
-    os_client = make_opensearch_client(settings)
+    storage = S3Storage(settings)
+    vector_store = VectorBundleStore(settings, storage)
 
     for index, question in enumerate(questions, start=1):
         language = detect_language(question)
         query_embedding = bedrock.embed_texts([question], input_type="search_query")[0]
-        chunks = search_chunks(
-            os_client,
-            index_name=settings.opensearch_index,
+        chunks = vector_store.search(
             query=question,
             query_embedding=query_embedding,
             top_k=args.top_k,

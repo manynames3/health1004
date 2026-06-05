@@ -6,18 +6,18 @@ Production-style RAG website for a one-time, manually ingested corpus of 572 wee
 
 - Next.js static frontend with Korean-first search/chat UI, citations, retrieved passages, document browser, date/title filtering, and PDF links.
 - FastAPI backend with `/query`, `/documents`, `/documents/{document_id}`, and `/health`.
-- Manual ingestion CLI for local PDFs with embedded-text extraction, Korean OCR fallback, chunking, Bedrock embeddings, OpenSearch upserts, S3 artifacts, checksums, and ingestion reports.
-- Terraform for S3, OpenSearch Serverless vector collection, IAM, ECR/App Runner API hosting, and CloudFront/S3 frontend hosting.
+- Manual ingestion CLI for local PDFs with embedded-text extraction, Korean OCR fallback, chunking, Bedrock embeddings, S3 artifacts, a compressed S3 vector bundle, checksums, and ingestion reports.
+- Low-cost Terraform for a private S3 corpus bucket and attachable IAM policies. It intentionally does not provision OpenSearch, App Runner, ECR, CloudFront, or always-on compute.
 
 The corpus is ingested manually. There are no crawlers, schedulers, or recurring ingestion jobs.
 
 ## Architecture
 
 1. Place PDFs in `./pdfs`.
-2. Run `python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/ --rebuild-index`.
-3. Ingestion uploads raw PDFs to S3, extracts page text, falls back to local Korean OCR when needed, writes JSON/Markdown artifacts, chunks Korean text, embeds chunks with Bedrock Cohere Embed Multilingual, and upserts vectors into OpenSearch Serverless.
+2. Run `python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/`.
+3. Ingestion uploads raw PDFs to S3, extracts page text, falls back to local Korean OCR when needed, writes JSON/Markdown artifacts, chunks Korean text, embeds chunks with Bedrock Cohere Embed Multilingual, and writes `vector-index/chunks.json.gz` to S3.
 4. Users ask questions in the frontend.
-5. FastAPI embeds the query, retrieves top chunks using vector plus keyword retrieval, asks a Bedrock chat model to answer only from retrieved context, and returns structured citations.
+5. FastAPI embeds the query, loads the cached S3 vector bundle, retrieves top chunks using exact vector plus keyword scoring, asks a Bedrock chat model to answer only from retrieved context, and returns structured citations.
 
 ## Local Setup
 
@@ -38,12 +38,12 @@ Fill `.env`:
 ```bash
 AWS_REGION=us-east-1
 S3_BUCKET=<terraform corpus bucket>
-OPENSEARCH_ENDPOINT=<terraform opensearch_collection_endpoint>
-OPENSEARCH_INDEX=korean-health-chunks
+VECTOR_BUNDLE_KEY=vector-index/chunks.json.gz
+VECTOR_DIMENSION=1024
 BEDROCK_CHAT_MODEL_ID=<your Bedrock chat model id>
 ```
 
-The default embedding model is `cohere.embed-multilingual-v3`. Keep `OPENSEARCH_VECTOR_DIMENSION=1024` for that model unless you change embedding models and rebuild the index.
+The default embedding model is `cohere.embed-multilingual-v3`. Keep `VECTOR_DIMENSION=1024` for that model unless you change embedding models and rebuild the vector bundle.
 
 ## AWS Prerequisites
 
@@ -52,7 +52,6 @@ The default embedding model is `cohere.embed-multilingual-v3`. Keep `OPENSEARCH_
 - Access to `cohere.embed-multilingual-v3`.
 - Access to the configured `BEDROCK_CHAT_MODEL_ID`.
 - Terraform installed.
-- Docker installed if deploying the backend container to ECR/App Runner.
 
 ## Bedrock Model Notes
 
@@ -75,13 +74,13 @@ Put the 572 PDFs in:
 Run:
 
 ```bash
-python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/ --rebuild-index
+python scripts/ingest.py --pdf-dir ./pdfs --s3-prefix raw-pdfs/
 ```
 
 Useful options:
 
 ```bash
-python scripts/ingest.py --pdf-dir ./pdfs --limit 3 --rebuild-index
+python scripts/ingest.py --pdf-dir ./pdfs --limit 3
 python scripts/ingest.py --pdf-dir ./pdfs --force
 python scripts/ingest.py --pdf-dir ./pdfs --report-path ./ingestion_report.json
 ```
@@ -95,10 +94,11 @@ Artifacts written to S3:
 - `extracted/<document_id>/pages.md`
 - `metadata/documents.json`
 - `ingestion-reports/ingestion_report.json`
+- `vector-index/chunks.json.gz`
 
 The same report is also written locally to `ingestion_report.json` by default. It includes:
 
-- run id, start/end timestamps, and configured model/index settings
+- run id, start/end timestamps, and configured model/vector-bundle settings
 - per-file status, checksum, page count, chunk count, and S3 artifact keys
 - embedded-text quality diagnostics
 - OCR attempt diagnostics, engine name, mean confidence where available, and fallback errors
@@ -139,7 +139,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Deploy With Terraform
+## Deploy AWS Storage With Terraform
 
 Initialize:
 
@@ -148,47 +148,13 @@ cd infra
 terraform init
 ```
 
-Create foundational resources and ECR:
-
 ```bash
 terraform apply \
-  -target=aws_ecr_repository.backend \
   -var="aws_region=us-east-1" \
   -var="bedrock_chat_model_id=<chat-model-id>"
 ```
 
-Build and push backend:
-
-```bash
-aws ecr get-login-password --region <region> \
-  | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
-docker build -t korean-health-rag-backend -f backend/Dockerfile .
-docker tag korean-health-rag-backend:latest <ecr-repo-url>:latest
-docker push <ecr-repo-url>:latest
-```
-
-Apply the rest:
-
-```bash
-terraform apply \
-  -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=<chat-model-id>" \
-  -var='ingestion_principal_arns=["arn:aws:iam::<account-id>:user/<you>"]'
-```
-
-Build and upload frontend:
-
-```bash
-cd frontend
-NEXT_PUBLIC_API_BASE_URL=https://<app-runner-url> npm run build
-aws s3 sync out/ s3://<frontend_bucket>/ --delete
-```
-
-Then invalidate CloudFront if replacing assets:
-
-```bash
-aws cloudfront create-invalidation --distribution-id <distribution-id> --paths "/*"
-```
+This creates only a private S3 corpus bucket and attachable IAM policies. The static frontend is deployed separately on Cloudflare Pages, and the API can run locally or on an on-demand runtime if needed.
 
 ## API
 
@@ -234,7 +200,7 @@ cd backend
 PYTHONPATH=. pytest
 ```
 
-Coverage includes chunking, citation formatting, language detection, query response schema, and OCR fallback decision logic.
+Coverage includes chunking, citation formatting, language detection, vector-bundle retrieval, query response schema, and OCR fallback decision logic.
 
 ## Retrieval Evaluation
 
