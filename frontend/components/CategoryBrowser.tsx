@@ -75,7 +75,7 @@ function categoryLabel(category: string): string {
 
 function formatError(error: Error): string {
   if (error.message === "Failed to fetch") {
-    return "API 서버에 연결할 수 없습니다. FastAPI 백엔드와 NEXT_PUBLIC_API_BASE_URL을 확인하세요.";
+    return "API 서버에 연결할 수 없습니다. 잠시 후 새로고침하거나 배포된 Pages 주소에서 다시 시도하세요.";
   }
   return error.message;
 }

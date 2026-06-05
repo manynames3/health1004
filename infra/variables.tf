@@ -89,9 +89,9 @@ variable "frontend_base_url" {
 }
 
 variable "cors_allow_origins" {
-  description = "Comma-separated origins allowed to call the API."
+  description = "Comma-separated origins allowed to call the API. Use * for Pages direct-upload previews."
   type        = string
-  default     = "https://health1004.pages.dev,http://localhost:3000"
+  default     = "*"
 }
 
 variable "admin_token" {
