@@ -83,15 +83,16 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      S3_BUCKET                  = aws_s3_bucket.corpus.bucket
-      VECTOR_BUNDLE_KEY          = var.vector_bundle_key
-      VECTOR_DIMENSION           = "1024"
-      TAXONOMY_VECTOR_BUNDLE_KEY = var.taxonomy_vector_bundle_key
-      TAXONOMY_REPORT_KEY        = var.taxonomy_report_key
-      DATABASE_URL               = var.database_url
-      BEDROCK_EMBED_MODEL_ID     = var.bedrock_embed_model_id
-      BEDROCK_CHAT_MODEL_ID      = var.bedrock_chat_model_id
-      FRONTEND_BASE_URL          = var.frontend_base_url
+      S3_BUCKET                      = aws_s3_bucket.corpus.bucket
+      VECTOR_BUNDLE_KEY              = var.vector_bundle_key
+      VECTOR_DIMENSION               = "1024"
+      TAXONOMY_VECTOR_BUNDLE_KEY     = var.taxonomy_vector_bundle_key
+      TAXONOMY_REPORT_KEY            = var.taxonomy_report_key
+      DATABASE_URL                   = var.database_url
+      BEDROCK_EMBED_MODEL_ID         = var.bedrock_embed_model_id
+      BEDROCK_CHAT_MODEL_ID          = var.bedrock_chat_model_id
+      BEDROCK_FALLBACK_CHAT_MODEL_ID = var.bedrock_fallback_chat_model_id
+      FRONTEND_BASE_URL              = var.frontend_base_url
       # Lambda Function URL CORS handles browser origins; keeping app CORS empty avoids duplicate ACAO headers.
       CORS_ALLOW_ORIGINS        = ""
       METADATA_KEY              = var.metadata_key

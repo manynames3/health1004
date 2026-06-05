@@ -1,7 +1,8 @@
 locals {
-  bedrock_embed_model_arn = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embed_model_id}"
-  bedrock_chat_model_arn  = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_chat_model_id}"
-  bedrock_profile_arn     = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/*"
+  bedrock_embed_model_arn         = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embed_model_id}"
+  bedrock_chat_model_arn          = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_chat_model_id}"
+  bedrock_fallback_chat_model_arn = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_fallback_chat_model_id}"
+  bedrock_profile_arn             = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/*"
 }
 
 data "aws_iam_policy_document" "ingestion" {
@@ -82,6 +83,7 @@ data "aws_iam_policy_document" "runtime" {
     resources = [
       local.bedrock_embed_model_arn,
       local.bedrock_chat_model_arn,
+      local.bedrock_fallback_chat_model_arn,
       local.bedrock_profile_arn
     ]
   }

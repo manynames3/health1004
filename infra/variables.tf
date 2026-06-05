@@ -19,13 +19,19 @@ variable "corpus_bucket_name" {
 variable "bedrock_embed_model_id" {
   description = "Bedrock embedding model id."
   type        = string
-  default     = "cohere.embed-multilingual-v3"
+  default     = "amazon.titan-embed-text-v2:0"
 }
 
 variable "bedrock_chat_model_id" {
-  description = "Bedrock chat model id used by the backend. Leave as * for broad attachable policy output, or set a specific model id for tighter IAM."
+  description = "Primary Bedrock chat model id used by the backend."
   type        = string
-  default     = "*"
+  default     = "anthropic.claude-haiku-4-5-20251001-v1:0"
+}
+
+variable "bedrock_fallback_chat_model_id" {
+  description = "Fallback Bedrock chat model id used when the primary answer model fails."
+  type        = string
+  default     = "amazon.nova-2-lite-v1:0"
 }
 
 variable "metadata_key" {

@@ -51,7 +51,7 @@ def ingest_pdf_paths(
     }
 
     vector_records_by_doc: dict[str, list[dict[str, Any]]] = {}
-    for record in load_existing_vector_records(storage, bundle_key):
+    for record in load_existing_vector_records(storage, bundle_key, settings):
         document_id = record.get("chunk", {}).get("document_id")
         if document_id:
             vector_records_by_doc.setdefault(document_id, []).append(record)
@@ -280,7 +280,7 @@ def process_pdf(
     }
 
 
-def load_existing_vector_records(storage: S3Storage, key: str) -> list[dict[str, Any]]:
+def load_existing_vector_records(storage: S3Storage, key: str, settings: Settings) -> list[dict[str, Any]]:
     payload = storage.get_bytes(key)
     if payload is None:
         return []
@@ -288,6 +288,22 @@ def load_existing_vector_records(storage: S3Storage, key: str) -> list[dict[str,
         bundle = parse_vector_bundle(payload)
     except Exception as exc:
         logger.warning("Could not load existing vector bundle %s: %s", key, exc)
+        return []
+    if bundle.metadata.get("embedding_model_id") != settings.bedrock_embed_model_id:
+        logger.info(
+            "Ignoring existing vector bundle %s because embedding model changed from %s to %s",
+            key,
+            bundle.metadata.get("embedding_model_id"),
+            settings.bedrock_embed_model_id,
+        )
+        return []
+    if int(bundle.metadata.get("embedding_dimension") or 0) != settings.vector_dimension:
+        logger.info(
+            "Ignoring existing vector bundle %s because embedding dimension changed from %s to %s",
+            key,
+            bundle.metadata.get("embedding_dimension"),
+            settings.vector_dimension,
+        )
         return []
     return [
         {

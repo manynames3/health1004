@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Optional
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,11 +22,23 @@ class Settings(BaseSettings):
     database_url: str = Field(default="", alias="DATABASE_URL")
 
     bedrock_embed_model_id: str = Field(
-        default="cohere.embed-multilingual-v3", alias="BEDROCK_EMBED_MODEL_ID"
+        default="amazon.titan-embed-text-v2:0",
+        validation_alias=AliasChoices("BEDROCK_EMBED_MODEL_ID", "EMBEDDING_MODEL_ID"),
     )
-    bedrock_chat_model_id: str = Field(default="", alias="BEDROCK_CHAT_MODEL_ID")
+    bedrock_chat_model_id: str = Field(
+        default="anthropic.claude-haiku-4-5-20251001-v1:0",
+        validation_alias=AliasChoices("BEDROCK_CHAT_MODEL_ID", "ANSWER_MODEL_ID"),
+    )
+    bedrock_fallback_chat_model_id: str = Field(
+        default="amazon.nova-2-lite-v1:0",
+        validation_alias=AliasChoices("BEDROCK_FALLBACK_CHAT_MODEL_ID", "FALLBACK_ANSWER_MODEL_ID"),
+    )
     bedrock_max_tokens: int = Field(default=1200, alias="BEDROCK_MAX_TOKENS")
     bedrock_temperature: float = Field(default=0.1, alias="BEDROCK_TEMPERATURE")
+    enable_rerank: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("ENABLE_RERANK", "ENABLE_BEDROCK_RERANK"),
+    )
 
     frontend_base_url: str = Field(default="http://localhost:3000", alias="FRONTEND_BASE_URL")
     cors_allow_origins: str = Field(

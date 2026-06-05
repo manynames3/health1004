@@ -83,8 +83,10 @@ AWS_REGION=us-east-1
 S3_BUCKET=<private corpus bucket>
 VECTOR_BUNDLE_KEY=vector-index/chunks.json.gz
 VECTOR_DIMENSION=1024
-BEDROCK_EMBED_MODEL_ID=cohere.embed-multilingual-v3
-BEDROCK_CHAT_MODEL_ID=<your Bedrock chat model id>
+BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v2:0
+BEDROCK_CHAT_MODEL_ID=anthropic.claude-haiku-4-5-20251001-v1:0
+BEDROCK_FALLBACK_CHAT_MODEL_ID=amazon.nova-2-lite-v1:0
+ENABLE_RERANK=false
 DATABASE_URL=postgresql+psycopg://health1004:health1004@localhost:5432/health1004
 ADMIN_TOKEN=<strong admin upload token>
 ADMIN_PASSWORD=<review UI password>
@@ -160,6 +162,8 @@ python scripts/evaluate_taxonomy_retrieval.py
 
 The evaluation prints resolved topics, filters, top retrieved passages, document/page sources, and whether citations were returned before answer generation.
 
+When changing `BEDROCK_EMBED_MODEL_ID`, rebuild embeddings with a full ingestion run so stored passage vectors and query vectors use the same model. The backend reads the active vector bundle metadata and embeds queries with that recorded model to avoid silently mixing embedding spaces during migrations.
+
 ## API Surface
 
 Archive and taxonomy:
@@ -232,7 +236,9 @@ cd infra
 terraform init
 terraform apply \
   -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=<chat-model-id>"
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0"
 ```
 
 Build and deploy the Lambda API package:
@@ -241,7 +247,9 @@ Build and deploy the Lambda API package:
 python scripts/build_lambda_package.py
 terraform apply \
   -var="deploy_api=true" \
-  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0" \
   -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
 ```
 

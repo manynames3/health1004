@@ -34,8 +34,11 @@ class RAGService:
             resolved_payload["retrieval_filters"]["topic_slugs"] = resolved_payload["matched_topic_slugs"]
 
         vector_store = VectorBundleStore(_settings_for_best_bundle(self.settings, storage), storage)
+        vector_bundle = vector_store.load()
 
-        embeddings = bedrock.embed_texts([request.question], input_type="search_query")
+        embed_settings = _settings_for_bundle_embedding(self.settings, vector_bundle.metadata)
+        embedder = bedrock if embed_settings is self.settings else BedrockRuntime(embed_settings)
+        embeddings = embedder.embed_texts([request.question], input_type="search_query")
         chunks = vector_store.search(
             query=request.question,
             query_embedding=embeddings[0],
@@ -86,6 +89,21 @@ def _settings_for_best_bundle(settings: Settings, storage: S3Storage) -> Setting
     if settings.taxonomy_vector_bundle_key and storage.get_bytes(settings.taxonomy_vector_bundle_key):
         return settings.model_copy(update={"vector_bundle_key": settings.taxonomy_vector_bundle_key})
     return settings
+
+
+def _settings_for_bundle_embedding(settings: Settings, metadata: dict) -> Settings:
+    model_id = metadata.get("embedding_model_id") or settings.bedrock_embed_model_id
+    dimension = int(metadata.get("embedding_dimension") or settings.vector_dimension)
+    if model_id == settings.bedrock_embed_model_id and dimension == settings.vector_dimension:
+        return settings
+    logger.info(
+        "Using vector bundle embedding model %s/%s instead of configured %s/%s",
+        model_id,
+        dimension,
+        settings.bedrock_embed_model_id,
+        settings.vector_dimension,
+    )
+    return settings.model_copy(update={"bedrock_embed_model_id": model_id, "vector_dimension": dimension})
 
 
 def related_topic_dicts(resolved_payload: dict, taxonomy) -> list[dict]:

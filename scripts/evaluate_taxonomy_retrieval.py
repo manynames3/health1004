@@ -49,7 +49,14 @@ def main() -> int:
     if storage.get_bytes(settings.taxonomy_vector_bundle_key) is None:
         vector_settings = settings
     vector_store = VectorBundleStore(vector_settings, storage)
-    bedrock = BedrockRuntime(settings)
+    bundle = vector_store.load()
+    embed_settings = settings.model_copy(
+        update={
+            "bedrock_embed_model_id": bundle.metadata.get("embedding_model_id", settings.bedrock_embed_model_id),
+            "vector_dimension": int(bundle.metadata.get("embedding_dimension") or settings.vector_dimension),
+        }
+    )
+    bedrock = BedrockRuntime(embed_settings)
 
     for index, question in enumerate(load_questions(args.questions_file), start=1):
         resolved = resolve_query(question, taxonomy)

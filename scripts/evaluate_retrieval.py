@@ -50,9 +50,16 @@ def main() -> int:
         settings.require_chat_model()
 
     questions = load_questions(args.questions_file)
-    bedrock = BedrockRuntime(settings)
     storage = S3Storage(settings)
     vector_store = VectorBundleStore(settings, storage)
+    bundle = vector_store.load()
+    embed_settings = settings.model_copy(
+        update={
+            "bedrock_embed_model_id": bundle.metadata.get("embedding_model_id", settings.bedrock_embed_model_id),
+            "vector_dimension": int(bundle.metadata.get("embedding_dimension") or settings.vector_dimension),
+        }
+    )
+    bedrock = BedrockRuntime(embed_settings)
 
     for index, question in enumerate(questions, start=1):
         language = detect_language(question)

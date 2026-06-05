@@ -32,7 +32,9 @@ cd infra
 terraform init
 terraform apply \
   -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=<chat-model-id>"
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0"
 ```
 
 Outputs include:
@@ -52,7 +54,9 @@ python scripts/build_lambda_package.py
 cd infra
 terraform apply \
   -var="deploy_api=true" \
-  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0" \
   -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
 ```
 
@@ -75,6 +79,8 @@ Any hosted backend needs:
 - `VECTOR_DIMENSION`
 - `BEDROCK_EMBED_MODEL_ID`
 - `BEDROCK_CHAT_MODEL_ID`
+- `BEDROCK_FALLBACK_CHAT_MODEL_ID`
+- `ENABLE_RERANK`
 - `CORS_ALLOW_ORIGINS`
 - `ADMIN_TOKEN`
 - `ADMIN_PASSWORD`, if review endpoints are exposed

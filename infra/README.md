@@ -23,7 +23,9 @@ It does not create OpenSearch, App Runner, ECR, CloudFront, or any always-on com
 terraform init
 terraform apply \
   -var="aws_region=us-east-1" \
-  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0"
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0"
 ```
 
 ## Deploy The Lambda API
@@ -39,7 +41,9 @@ From `infra/`:
 ```bash
 terraform apply \
   -var="deploy_api=true" \
-  -var="bedrock_chat_model_id=amazon.nova-micro-v1:0" \
+  -var="bedrock_chat_model_id=anthropic.claude-haiku-4-5-20251001-v1:0" \
+  -var="bedrock_fallback_chat_model_id=amazon.nova-2-lite-v1:0" \
+  -var="bedrock_embed_model_id=amazon.titan-embed-text-v2:0" \
   -var="lambda_package_path=../outputs/health1004-api-lambda.zip"
 ```
 
