@@ -92,24 +92,25 @@ resource "aws_lambda_function" "api" {
       BEDROCK_EMBED_MODEL_ID     = var.bedrock_embed_model_id
       BEDROCK_CHAT_MODEL_ID      = var.bedrock_chat_model_id
       FRONTEND_BASE_URL          = var.frontend_base_url
-      CORS_ALLOW_ORIGINS         = var.cors_allow_origins
-      METADATA_KEY               = var.metadata_key
-      EXTRACTED_PREFIX           = "extracted/"
-      REPORTS_PREFIX             = "ingestion-reports/"
-      PRESIGNED_URL_TTL_SECONDS  = "3600"
-      REQUEST_BODY_LIMIT_BYTES   = "16384"
-      ADMIN_UPLOAD_LIMIT_BYTES   = tostring(var.lambda_admin_upload_limit_bytes)
-      ADMIN_TOKEN                = var.admin_token
-      ADMIN_PASSWORD             = var.admin_password
-      TAXONOMY_SEED_PATH         = "data/taxonomy.seed.yaml"
-      ENABLE_LLM_TAGGING         = "false"
-      ENABLE_NORI_ANALYZER       = "false"
-      OPENSEARCH_USE_HYBRID      = "true"
-      OPENSEARCH_ENDPOINT        = ""
-      OPENSEARCH_INDEX           = "health1004-passages"
-      MIN_TAG_CONFIDENCE         = tostring(var.min_tag_confidence)
-      RATE_LIMIT_PER_MINUTE      = "30"
-      LOG_LEVEL                  = "INFO"
+      # Lambda Function URL CORS handles browser origins; keeping app CORS empty avoids duplicate ACAO headers.
+      CORS_ALLOW_ORIGINS        = ""
+      METADATA_KEY              = var.metadata_key
+      EXTRACTED_PREFIX          = "extracted/"
+      REPORTS_PREFIX            = "ingestion-reports/"
+      PRESIGNED_URL_TTL_SECONDS = "3600"
+      REQUEST_BODY_LIMIT_BYTES  = "16384"
+      ADMIN_UPLOAD_LIMIT_BYTES  = tostring(var.lambda_admin_upload_limit_bytes)
+      ADMIN_TOKEN               = var.admin_token
+      ADMIN_PASSWORD            = var.admin_password
+      TAXONOMY_SEED_PATH        = "data/taxonomy.seed.yaml"
+      ENABLE_LLM_TAGGING        = "false"
+      ENABLE_NORI_ANALYZER      = "false"
+      OPENSEARCH_USE_HYBRID     = "true"
+      OPENSEARCH_ENDPOINT       = ""
+      OPENSEARCH_INDEX          = "health1004-passages"
+      MIN_TAG_CONFIDENCE        = tostring(var.min_tag_confidence)
+      RATE_LIMIT_PER_MINUTE     = "30"
+      LOG_LEVEL                 = "INFO"
     }
   }
 

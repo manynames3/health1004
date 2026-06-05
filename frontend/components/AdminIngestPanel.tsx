@@ -6,6 +6,7 @@ import { fetchAdminStatus, ingestAdminFiles } from "../lib/api";
 import { AdminIngestResponse, AdminStatus } from "../types";
 
 const TOKEN_STORAGE_KEY = "health1004-admin-token";
+const DEFAULT_BROWSER_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 
 export function AdminIngestPanel() {
   const [adminToken, setAdminToken] = useState("");
@@ -24,12 +25,16 @@ export function AdminIngestPanel() {
   }, []);
 
   const totalSize = useMemo(() => files.reduce((sum, file) => sum + file.size, 0), [files]);
+  const uploadLimit = status?.upload_limit_bytes ?? DEFAULT_BROWSER_UPLOAD_LIMIT_BYTES;
   const hasAdminToken = adminToken.trim().length > 0;
   const hasFiles = files.length > 0;
+  const exceedsUploadLimit = hasFiles && totalSize > uploadLimit;
   const ingestDisabledReason = !hasAdminToken
     ? "Enter ADMIN_TOKEN to enable ingestion."
     : !hasFiles
       ? "Select one or more PDF files to ingest."
+      : exceedsUploadLimit
+        ? `Selected PDFs are ${formatBytes(totalSize)}, over the ${formatBytes(uploadLimit)} browser upload limit. Use CLI/S3 ingestion for bulk PDFs.`
       : "";
 
   function onTokenChange(value: string) {
@@ -62,7 +67,7 @@ export function AdminIngestPanel() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!adminToken.trim() || files.length === 0) return;
+    if (!adminToken.trim() || files.length === 0 || exceedsUploadLimit) return;
     setUploading(true);
     setError("");
     setResult(null);
@@ -76,7 +81,7 @@ export function AdminIngestPanel() {
         })
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not ingest files.");
+      setError(adminIngestError(err, totalSize, uploadLimit));
     } finally {
       setUploading(false);
     }
@@ -129,7 +134,11 @@ export function AdminIngestPanel() {
         <label className="upload-dropzone" htmlFor="admin-pdfs">
           <UploadCloud size={28} aria-hidden="true" />
           <span>{files.length ? `${files.length} PDFs selected` : "Select PDF files"}</span>
-          <small>{files.length ? formatBytes(totalSize) : "Multiple files supported"}</small>
+          <small>
+            {files.length
+              ? `${formatBytes(totalSize)} selected · ${formatBytes(uploadLimit)} browser limit`
+              : `Multiple files supported up to ${formatBytes(uploadLimit)}`}
+          </small>
           <input id="admin-pdfs" type="file" accept="application/pdf,.pdf" multiple onChange={onFilesChange} />
         </label>
 
@@ -160,7 +169,7 @@ export function AdminIngestPanel() {
           <button
             className="primary-admin-button"
             type="submit"
-            disabled={uploading || !hasAdminToken || !hasFiles}
+            disabled={uploading || !hasAdminToken || !hasFiles || exceedsUploadLimit}
             aria-describedby={ingestDisabledReason ? "ingest-disabled-reason" : undefined}
           >
             {uploading ? <Loader2 className="spin" size={18} /> : <UploadCloud size={18} />}
@@ -226,4 +235,12 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function adminIngestError(error: unknown, totalSize: number, uploadLimit: number): string {
+  const message = error instanceof Error ? error.message : "Could not ingest files.";
+  if (message === "Failed to fetch") {
+    return `Upload request could not complete. Browser uploads through the deployed API are limited to ${formatBytes(uploadLimit)}; selected files total ${formatBytes(totalSize)}. Use CLI/S3 ingestion for bulk PDFs.`;
+  }
+  return message;
 }
