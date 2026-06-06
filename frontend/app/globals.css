@@ -175,10 +175,12 @@ h4 {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  max-width: 100%;
   min-height: 46px;
   border-radius: 8px;
   padding: 0 18px;
   font-weight: 900;
+  text-align: center;
 }
 
 .primary-link {
@@ -1728,6 +1730,7 @@ code {
 .topic-main-panel,
 .topic-side-panel,
 .document-detail-card {
+  min-width: 0;
   padding: 24px;
 }
 
@@ -1736,7 +1739,13 @@ code {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
+  min-width: 0;
   margin-bottom: 18px;
+}
+
+.topic-title-row > div,
+.passage-card > div {
+  min-width: 0;
 }
 
 .primary-link.dark {
@@ -1766,11 +1775,13 @@ code {
 }
 
 .passage-card {
+  min-width: 0;
   padding: 18px;
 }
 
 .passage-card h3,
 .passage-card h2 {
+  overflow-wrap: anywhere;
   margin-bottom: 4px;
   font-size: 1rem;
 }
@@ -1779,11 +1790,13 @@ code {
 .topic-side-panel p,
 .document-detail-card dd {
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .passage-card blockquote {
   margin: 12px 0;
   padding-left: 12px;
+  overflow-wrap: anywhere;
   border-left: 3px solid #b9d8c8;
 }
 
@@ -1807,10 +1820,12 @@ code {
 .topic-side-panel article {
   display: grid;
   gap: 3px;
+  min-width: 0;
   padding: 10px;
   background: #f8faf8;
   border: 1px solid var(--border);
   border-radius: 8px;
+  overflow-wrap: anywhere;
 }
 
 .safety-note,
@@ -1930,7 +1945,7 @@ code {
   .admin-panel,
   .author-page-layout,
   .topic-detail-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .home-card-grid,
